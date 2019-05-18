@@ -9,6 +9,7 @@
 #from scipy.stats import norm
 #import matplotlib.pyplot as plt
 
+
 from serial import Serial
 import time
 
@@ -19,7 +20,7 @@ w_word = 32
 n_bw = int(w_word  / w_byte)
 n_header = 3  # in words
 
-def main(n_data=512):
+def main():
 
 
     print("Loopback Test")
