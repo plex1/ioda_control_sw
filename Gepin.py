@@ -57,8 +57,9 @@ class GepinFrame(object):
         frame = {
             "id": (idcval & (0xFF << (self.w_word - self.w_byte))) >> (self.w_word - self.w_byte),
             "command": (idcval & (0xFF << (self.w_byte))) >> self.w_byte,
-            "request": (idcval & 0x2) >> 1,
-            "incr": idcval & 0x1,
+            "request": idcval & 0x1, #(idcval & 0x2) >> 1,
+            "incr": (idcval & 0x2) >> 1,
+            "nack": (idcval & 0x4) >> 2,
             "addr": self.byteArrayToInt(frame_data[4:8]),
             "length": self.byteArrayToInt(frame_data[8:12]),
             "data": self.bytesToWords(frame_data[12:])
@@ -73,7 +74,10 @@ class GepinMaster(object):
     phy = ...  # type: GepinPhySerial
 
     def __init__(self, phy):
+
         self.phy = phy
+        self.offset = 0
+
         # constants
         self.id = 0xcf
         self.w_byte = 8
@@ -86,22 +90,30 @@ class GepinMaster(object):
 
     def read(self, addr, length=1, incr=False):
 
-        e = self.gepin_frame.encode_frame(command=0, addr=addr, length=length, data=[])
+        e = self.gepin_frame.encode_frame(command=0, addr=addr+self.offset, length=length, data=[])
         self.phy.write_list(e)
 
         h = self.phy.read_list(self.n_header*self.n_bw)
         dh = self.gepin_frame.decode_frame(h)
-        d = self.phy.read_list(self.n_bw*dh.get('length'))
+        d = []
+        if dh.get('nack') == 0:
+            d = self.phy.read_list(self.n_bw*dh.get('length'))
+        else:
+            print("nack received")
         df = self.gepin_frame.decode_frame(h+d)
+        df['addr'] = df.get('addr') - self.offset
         return df.get('data')
 
     def write(self, addr, data, length=1, incr=False):
 
-        e = self.gepin_frame.encode_frame(command=1, addr=addr, length=length, data=list(data))
+        e = self.gepin_frame.encode_frame(command=1, addr=addr+self.offset, length=length, data=list(data))
         self.phy.write_list(e)
 
         h = self.phy.read_list(self.n_header*self.n_bw)
         dh = self.gepin_frame.decode_frame(h)
+        if dh.get('nack') == 1:
+            print("nack received")
+        dh['addr'] = dh.get('addr') - self.offset
 
 
 

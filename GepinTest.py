@@ -7,15 +7,18 @@ def main():
     gepin_phy = GepinPhySerial('/dev/ttyUSB0')
     gepin = GepinMaster(gepin_phy)
 
-    gepin.write(1,[66])
+    gepin.write(0,[66])
 
     data=gepin.read(1)
     print(str(data))
 
-    gepin.write(2,[77])
+    gepin.write(1,[77])
 
-    data=gepin.read(1,3)
+    data=gepin.read(0,4)
     print(str(data))
+
+    gepin.read(100)
+    gepin.read(0)
 
 
 
