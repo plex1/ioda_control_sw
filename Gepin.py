@@ -13,6 +13,7 @@ class GepinFrame(object):
         self.n_bw = int(self.w_word / self.w_byte)
         self.n_header = 3  # in words
         # addrshift
+        self.tag = 0;
 
     # ----------------------- point-to-point
 
@@ -46,7 +47,7 @@ class GepinFrame(object):
             incr_num = 1
         else:
             incr_num = 0
-        idcval = (self.id << (self.w_word - self.w_byte)) + (command << self.w_byte) + (incr_num << 1) + request
+        idcval = (self.id << (self.w_word - self.w_byte)) + (self.tag << 2*self.w_byte) + (command << self.w_byte) + (incr_num << 1) + request
 
         return self.intToByteArray(idcval) + self.intToByteArray(addr) + self.intToByteArray(length) \
                + self.wordsToBytes(data)
@@ -56,6 +57,7 @@ class GepinFrame(object):
 
         frame = {
             "id": (idcval & (0xFF << (self.w_word - self.w_byte))) >> (self.w_word - self.w_byte),
+            "tag": (idcval & (0xFF << (2*self.w_byte))) >> 2*self.w_byte,
             "command": (idcval & (0xFF << (self.w_byte))) >> self.w_byte,
             "request": idcval & 0x1, #(idcval & 0x2) >> 1,
             "incr": (idcval & 0x2) >> 1,
@@ -101,12 +103,20 @@ class GepinMaster(object):
         else:
             print("nack received")
         df = self.gepin_frame.decode_frame(h+d)
+        for i in range(len(df['data'])):
+            if (df['data'])[i] >= 2**(self.w_word-1):
+                (df['data'])[i] -= 2**(self.w_word)-1 # convert to signed
         df['addr'] = df.get('addr') - self.offset
         return df.get('data')
 
-    def write(self, addr, data, length=1, incr=False):
-
-        e = self.gepin_frame.encode_frame(command=1, addr=addr+self.offset, length=length, data=list(data))
+    def write(self, addr, data, incr=True):
+        if type(data) != list:
+            data = [data]
+        length=len(data)
+        for i in range(len(data)):
+            if data[i]<0:
+                data[i] += 2**(self.w_word)-1 # convert to signed
+        e = self.gepin_frame.encode_frame(command=1, addr=addr+self.offset, length=length, data=list(data), incr = incr)
         self.phy.write_list(e)
 
         h = self.phy.read_list(self.n_header*self.n_bw)
