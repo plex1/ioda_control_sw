@@ -90,7 +90,7 @@ class GepinMaster(object):
         # addrshift
         print("Pepin Created")
 
-    def read(self, addr, length=1, incr=False):
+    def read(self, addr, length=1, incr=False, signed=True):
 
         e = self.gepin_frame.encode_frame(command=0, addr=addr+self.offset, length=length, data=[])
         self.phy.write_list(e)
@@ -103,9 +103,10 @@ class GepinMaster(object):
         else:
             print("nack received")
         df = self.gepin_frame.decode_frame(h+d)
-        for i in range(len(df['data'])):
-            if (df['data'])[i] >= 2**(self.w_word-1):
-                (df['data'])[i] -= 2**(self.w_word)-1 # convert to signed
+        if signed:
+            for i in range(len(df['data'])):
+                if (df['data'])[i] >= 2**(self.w_word-1):
+                    (df['data'])[i] -= 2**(self.w_word)-1 # convert to signed
         df['addr'] = df.get('addr') - self.offset
         return df.get('data')
 

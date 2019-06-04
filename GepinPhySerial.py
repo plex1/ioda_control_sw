@@ -16,7 +16,7 @@ class GepinPhySerial(object):
 
     def __init__(self, port, baudrate=9600):
         print("Pepin Created")
-        self.ser = Serial(port)  # open serial port
+        self.ser = Serial(port, baudrate=baudrate)  # open serial port
         self.debug = 1
 
         print(self.ser.name)  # check which port was really used
@@ -28,6 +28,10 @@ class GepinPhySerial(object):
         self.ser.write(bytearray(wl))
 
     def read_list(self, len):
+        print("start reading: "+ str(len))
+        #for i in range(0,12):
+        #    print(str(self.ser.read(1)))
+        #print("end reading")
         rl = list(self.ser.read(len))
         if self.debug > 0:
             print("received bytes: " + str(rl))
