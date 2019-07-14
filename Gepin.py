@@ -59,7 +59,7 @@ class GepinFrame(object):
             "id": (idcval & (0xFF << (self.w_word - self.w_byte))) >> (self.w_word - self.w_byte),
             "tag": (idcval & (0xFF << (2*self.w_byte))) >> 2*self.w_byte,
             "command": (idcval & (0xFF << (self.w_byte))) >> self.w_byte,
-            "request": idcval & 0x1, #(idcval & 0x2) >> 1,
+            "request": idcval & 0x1,
             "incr": (idcval & 0x2) >> 1,
             "nack": (idcval & 0x4) >> 2,
             "addr": self.byteArrayToInt(frame_data[4:8]),
@@ -88,11 +88,10 @@ class GepinMaster(object):
         self.n_header = 3  # in words
         self.gepin_frame = GepinFrame()
         # addrshift
-        print("Pepin Created")
 
-    def read(self, addr, length=1, incr=False, signed=True):
+    def read(self, addr, length=1, incr=True, signed=True):
 
-        e = self.gepin_frame.encode_frame(command=0, addr=addr+self.offset, length=length, data=[])
+        e = self.gepin_frame.encode_frame(command=0, addr=addr+self.offset, length=length, data=[], incr=incr)
         self.phy.write_list(e)
 
         h = self.phy.read_list(self.n_header*self.n_bw)
@@ -117,7 +116,7 @@ class GepinMaster(object):
         for i in range(len(data)):
             if data[i]<0:
                 data[i] += 2**(self.w_word)-1 # convert to signed
-        e = self.gepin_frame.encode_frame(command=1, addr=addr+self.offset, length=length, data=list(data), incr = incr)
+        e = self.gepin_frame.encode_frame(command=1, addr=addr+self.offset, length=length, data=list(data), incr=incr)
         self.phy.write_list(e)
 
         h = self.phy.read_list(self.n_header*self.n_bw)

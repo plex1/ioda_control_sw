@@ -23,9 +23,10 @@ def main():
     #gepin.write(0xF003001c, [0])
 
 
-    period = 30
+    period = 0
     gepin.write(0xF003001c, [period])
 
+    return
 
     for delay in range (0,255,20):
         gepin.write(0xF0030018, [delay])
