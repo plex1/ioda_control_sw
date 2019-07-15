@@ -20,6 +20,7 @@ def main():
     gepin = GepinMaster(gepin_phy)
 
     n_taps = 100
+    clock_period = 25  # 25ns 40MHz clock
 
     # init registers
     test_csri = csr_tofperipheral()
@@ -27,37 +28,62 @@ def main():
     registers.offset = 0xF0030000
     registers.populate(test_csri)
 
+    # init tofcontrol
     tofc = TofControl(registers)
     tofc.init()
+    tofc.cal_time = 1
 
-    registers.reg['trigTestPeriod'].write(20)
-
-    #calibrate
-    registers.histogramFilter.write(0)  # filter off
-
-    registers.reg['ringOscSetting'].write(4)  # set to internal Oscillator
-    values = tofc.get_histogram(n_taps, 1)
-    hist_rand = HistogramProcessing(values)
-
-    registers.reg['ringOscSetting'].write(0)  # set to external input
-    tofc.set_delay(20)
-    values = tofc.get_histogram(n_taps, 1)
-    hist_pulse = HistogramProcessing(values)
-    dt = 25 #25ns
+    # init tof processing
     tofp = TofProcessing()
-    tofp.calibrate(hist_pulse, hist_rand, dt)
+    tofp.use_correlation = False
 
+    # calibrate
+    calib_histograms = tofc.get_calibration_histograms(n_taps)
+    tofp.calibrate(calib_histograms[0], calib_histograms[1], clock_period)
 
+    # # test
+    # # settings for time read
+    # registers.reg['trigTestPeriod'].write(20)
+    # registers.ringOscSetting.write(0)
+    # # no slot select
+    # registers.histogramFilter.write(0)
+    #
+    # hp = HistogramProcessing()
+    # tofc.set_delay(40)
+    # values = tofc.get_histogram(n_taps, 1)
+    # print(str(values))
+    # hp.set_histogram(values)
+    # hp.prune_keep_group(1)
+    # hp.set_histogram(values)
+    # tofp.use_correlation=False
+    # t1=tofp.get_time(hp, 0)
+    # print(str(t1))
+    # tofp.use_correlation = True
+    # t2 = tofp.get_time(hp, 0)
+    # print(str(t2))
 
+    # verify calibration
+    std_norm = tofc.verify_calibration(tofp.dt_per_bin)
+    print('cd_norm_std =' + str(std_norm))
+
+    # verify calibration via period measurement
+    period_std=tofc.verify_calibartion_period(tofp, clock_period)
+    print('period_std =' + str(period_std))
+
+    return
+
+    # settings for time read
+    registers.reg['trigTestPeriod'].write(20)
     registers.ringOscSetting.write(0)
-    slot_select = 6
+    slot_select = 5
     registers.histogramFilter.write(2**16+slot_select)
 
-
+    # no slot select
+    registers.histogramFilter.write(0)
 
     delay_set = range (0,40,2)
     #delay_set = range(0, 240, 20)
-    delay_set = range(10, 31, 10)
+    delay_set = range(10, 41, 10)
     delay_meas = []
     delay_tmeas = []
 
@@ -65,6 +91,7 @@ def main():
     for delay in delay_set:
         tofc.set_delay(delay)
         values = tofc.get_histogram(n_taps, 1)
+        valuesc = values.copy()
         print(str(values))
         hp.set_histogram(values)
         hp.prune_keep_group(0)
