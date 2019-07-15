@@ -31,11 +31,13 @@ def main():
     # init tofcontrol
     tofc = TofControl(registers)
     tofc.init()
-    tofc.cal_time = 1
+    tofc.cal_time = 5
 
     # init tof processing
     tofp = TofProcessing()
     tofp.use_correlation = False
+    tofp.use_midpoint = True
+    tofp.calibrate_bins = True
 
     # calibrate
     calib_histograms = tofc.get_calibration_histograms(n_taps)

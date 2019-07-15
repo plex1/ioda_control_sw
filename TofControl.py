@@ -71,7 +71,8 @@ class TofControl(object):
         self.tofregs.ringOscSetting.write(0) # set to external input
         self.tofregs.histogramFilter.write(0) # no slot select
 
-        delay_set = range(60, 171, 5)
+        step_size = 5
+        delay_set = range(0, 151, step_size)
         period_dev_meas = []
 
         for delay in delay_set:

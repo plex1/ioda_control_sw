@@ -46,9 +46,12 @@ class TofProcessing(object):
     def __init__(self):
         self.dt_per_bin = None
         self.t_per_bin = None
+        self.t_mid_per_bin = None
         self.clk_period = None
         self.use_correlation = False
+        self.use_midpoint = False
         self.debugplot = False
+        self.calibrate_bins = True
 
     def get_frac(self, val):
         return np.modf(val)[0]
@@ -57,7 +60,13 @@ class TofProcessing(object):
         return int(np.modf(val)[1])
 
     def calibrate(self, hist_pulse, hist_rand, clk_period):
+
+        if not self.calibrate_bins:
+            for i in range(0,len(hist_rand.histogram)):
+                hist_rand.histogram[i] = 1
+
         self.clk_period = clk_period
+
         values0 = hist_pulse.histogram.copy()
         values1 = hist_pulse.histogram.copy()
         h0 = HistogramProcessing(values0)
@@ -66,6 +75,8 @@ class TofProcessing(object):
         h1.prune_keep_group(2)
         wa0 = h0.get_weighted_average()
         wa1 = h1.get_weighted_average()
+
+        # calculate sum per period
         sum_in_period = 0
         # sum part of first bin
         sum_in_period += hist_rand.histogram[self.get_int(wa0)] * (1-self.get_frac(wa0))
@@ -75,6 +86,7 @@ class TofProcessing(object):
         for i in range(self.get_int(wa0)+1, self.get_int(wa1)):
             sum_in_period += hist_rand.histogram[i]
 
+        # calculate time for each bin
         dt_per_bin = hist_rand.histogram / sum_in_period * clk_period
         t_per_bin = []
         sums = 0
@@ -84,13 +96,48 @@ class TofProcessing(object):
         self.dt_per_bin = dt_per_bin
         self.t_per_bin = t_per_bin
 
+        # calculate the mid point of each bin
+        t_mid_per_bin = []
+        for i in range(0, len(dt_per_bin)):
+            t_mid_per_bin.append(t_per_bin[i]+1/2*dt_per_bin[i])
+        self.t_mid_per_bin = t_mid_per_bin
+
+        # use mid point
+        if self.use_midpoint:
+            self.t_per_bin = t_mid_per_bin
+
     def get_time(self, hist, slot_select):
         if self.use_correlation:
-            dtime =  self.get_time_correlation(hist)
+            dtime = self.get_time_correlation(hist)
         else:
-            # todo: weighted average by using middle of bin
-            wa = hist.get_weighted_average()  # weighted average
-            dtime = self.t_per_bin[self.get_int(wa)] + self.get_frac(wa)*self.dt_per_bin[self.get_int(wa)]
+            if True: #not self.use_midpoint:
+                dtime = np.sum(np.array(hist.histogram) * np.array(self.t_per_bin)) / sum(np.array(hist.histogram))
+            else:
+                # todo catch error when accesing out of index
+                if False:
+                    dtime = self.t_per_bin[self.get_int(wa)] + self.get_frac(wa) * self.dt_per_bin[self.get_int(wa)]
+                else:
+                    if (self.get_frac(wa) <= 0.5):
+                        dtime = self.t_per_bin[self.get_int(wa)] + self.get_frac(wa) * self.dt_per_bin[self.get_int(wa)]
+                    else:
+                        dtime = self.t_per_bin[self.get_int(wa)] + 1/2 * self.dt_per_bin[self.get_int(wa)] \
+                                + (self.get_frac(wa)-0.5) * self.dt_per_bin[self.get_int(wa)+1]
+        # else:
+        #     # todo: weighted average by using middle of bin
+        #     wa = hist.get_weighted_average()  # weighted average
+        #     if not self.use_midpoint:
+        #         dtime = self.t_per_bin[self.get_int(wa)] + self.get_frac(wa)*self.dt_per_bin[self.get_int(wa)]
+        #     else:
+        #         # todo catch error when accesing out of index
+        #         if False:
+        #             dtime = self.t_per_bin[self.get_int(wa)] + self.get_frac(wa) * self.dt_per_bin[self.get_int(wa)]
+        #         else:
+        #             if (self.get_frac(wa) <= 0.5):
+        #                 dtime = self.t_per_bin[self.get_int(wa)] + self.get_frac(wa) * self.dt_per_bin[self.get_int(wa)]
+        #             else:
+        #                 dtime = self.t_per_bin[self.get_int(wa)] + 1/2 * self.dt_per_bin[self.get_int(wa)] \
+        #                         + (self.get_frac(wa)-0.5) * self.dt_per_bin[self.get_int(wa)+1]
+
 
         return slot_select*self.clk_period - dtime
 
@@ -107,7 +154,7 @@ class TofProcessing(object):
         cor_vec = []
         for dt in np.arange(maximum-n_incl, maximum+n_incl, 1/os):
             pulse = self.get_pulse(self.t_per_bin, dt, variance, fs=1000)
-            cor = np.sum(np.multiply(pulse, hist.histogram)) # correlation
+            cor = np.sum(pulse * np.array(hist.histogram) * np.array(self.dt_per_bin))  # correlation
             dt_vec.append(dt)
             cor_vec.append(cor)
 
