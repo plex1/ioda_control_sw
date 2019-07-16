@@ -7,7 +7,7 @@ class TofControl(object):
 
     def __init__(self, regs):
         self.tofregs = regs
-        self.debug = 1
+        self.debug = 0
         self.cal_time = 0.5
 
     def modes(self, modename):
@@ -68,10 +68,10 @@ class TofControl(object):
         n_taps = len(tofp.dt_per_bin)
         # settings for time read
         self.tofregs.reg['trigTestPeriod'].write(20)
-        self.tofregs.ringOscSetting.write(0) # set to external input
-        self.tofregs.histogramFilter.write(0) # no slot select
+        self.tofregs.ringOscSetting.write(0)  # set to external input
+        self.tofregs.histogramFilter.write(0)  # no slot select
 
-        step_size = 5
+        step_size = 10
         delay_set = range(0, 151, step_size)
         period_dev_meas = []
 
@@ -98,6 +98,20 @@ class TofControl(object):
         period_std = np.sqrt(np.var(np.array(period_dev_meas)))
         if self.debug >0: print("Period deviation std: " + str(period_std))
         return period_std
+
+    def measure_delay(self, tofp, n_taps):
+
+        slot_select = self.tofregs.reg['averageFilter'].read()
+        slot_select = int(slot_select+1)
+        self.tofregs.reg['histogramFilter'].write(2 ** 16 + slot_select)
+
+        hp = HistogramProcessing()
+        values = self.get_histogram(n_taps, 1)
+        hp.set_histogram(values)
+        hp.prune_keep_group(0)
+
+        time_meas = tofp.get_time(hp, slot_select)
+        return time_meas
 
 
 

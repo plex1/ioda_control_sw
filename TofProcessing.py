@@ -17,6 +17,18 @@ class HistogramProcessing(object):
         taps = np.arange(self.get_num_taps())
         return np.average(taps, weights=self.histogram)
 
+    def get_integral_counts(self, hist_rand):
+
+        #make the integral from the counts in hist_rand
+        hr_integral=[]
+        running_integral=0
+        for i in range(len(hist_rand.histogram)):
+            hr_integral.append(running_integral)
+            running_integral += hist_rand.histogram[i]
+        # estimate the time of the pule in unit of counts
+        t_est = np.sum(np.array(self.histogram) * np.array(hr_integral)) / sum(np.array(self.histogram))
+        return t_est
+
     def prune_keep_group(self, n):
         group_nr = -1
         in_group = False
@@ -67,24 +79,16 @@ class TofProcessing(object):
 
         self.clk_period = clk_period
 
+        # get the sum of counts in one period
         values0 = hist_pulse.histogram.copy()
         values1 = hist_pulse.histogram.copy()
         h0 = HistogramProcessing(values0)
         h1 = HistogramProcessing(values1)
         h0.prune_keep_group(1)
         h1.prune_keep_group(2)
-        wa0 = h0.get_weighted_average()
-        wa1 = h1.get_weighted_average()
-
-        # calculate sum per period
-        sum_in_period = 0
-        # sum part of first bin
-        sum_in_period += hist_rand.histogram[self.get_int(wa0)] * (1-self.get_frac(wa0))
-        # sum part of last bin
-        sum_in_period += hist_rand.histogram[self.get_int(wa1) + 1] * self.get_frac(wa1)
-        # sum bins in between
-        for i in range(self.get_int(wa0)+1, self.get_int(wa1)):
-            sum_in_period += hist_rand.histogram[i]
+        it0 = h0.get_integral_counts(hist_rand)
+        it1 = h1.get_integral_counts(hist_rand)
+        sum_in_period = it1-it0
 
         # calculate time for each bin
         dt_per_bin = hist_rand.histogram / sum_in_period * clk_period
