@@ -6,21 +6,19 @@ from registers import Registers
 from TofControl import TofControl
 from TofProcessing import HistogramProcessing
 from TofProcessing import TofProcessing
+import collections
 
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 
+import TofTestCases
 
 def main():
-
 
     # init interface
     gepin_phy = GepinPhySerial('/dev/ttyUSB0', baudrate=115200)
     gepin = GepinMaster(gepin_phy)
-
-    n_taps = 100
-    clock_period = 25  # 25ns 40MHz clock
 
     # init registers
     test_csri = csr_tofperipheral()
@@ -28,53 +26,51 @@ def main():
     registers.offset = 0xF0030000
     registers.populate(test_csri)
 
-    # init tofcontrol
-    tofc = TofControl(registers)
-    tofc.init()
-    tofc.cal_time = 1
+    # define framework
+    fw={}
+    fw['registers'] = registers
 
-    # init tof processing
-    tofp = TofProcessing()
-    tofp.use_correlation = False
-    tofp.use_midpoint = True
-    tofp.calibrate_bins = True
+    # list of test cases
 
-    # calibrate
-    calib_histograms = tofc.get_calibration_histograms(n_taps)
-    tofp.calibrate(calib_histograms[0], calib_histograms[1], clock_period)
+    collections.OrderedDict()
+    test_cases =collections.OrderedDict([('Id', TofTestCases.TestCaseID),
+                                        ('Calibrate', TofTestCases.TestCaseCalibrate),
+                                         ('Measure', TofTestCases.TestCaseMeasure)])
 
-    # verify calibration via random bin distribution
-    std_norm = tofc.verify_calibration(tofp.dt_per_bin)
-    print('cd_norm_std = ' + str(std_norm))
+    # execute test cases
+    for name in test_cases:
+        print('Test Case: ' + name)
+        tc = test_cases[name](fw)
+        tc.execute()
 
-    # verify calibration via period measurement
-    period_std=tofc.verify_calibartion_period(tofp, clock_period)
-    print('period_std  = ' + str(period_std))
+def analyze(id):
 
+    # init interface
+    gepin_phy = GepinPhySerial('/dev/ttyUSB0', baudrate=115200)
+    gepin = GepinMaster(gepin_phy)
 
-    # settings for time measurements
-    registers.reg['trigTestPeriod'].write(20)
-    registers.ringOscSetting.write(0)
-    slot_select = 6
-    registers.histogramFilter.write(2**16+slot_select)
+    # init registers
+    test_csri = csr_tofperipheral()
+    registers = Registers(gepin)
+    registers.offset = 0xF0030000
+    registers.populate(test_csri)
 
-    delay_set = range(10, 141, 1)
-    delay_tmeas = []
+    # define framework
+    fw = {}
+    fw['registers'] = registers
 
-    for delay in delay_set:
-        tofc.set_delay(delay)
-        time_meas=tofc.measure_delay(tofp, n_taps)
-        delay_tmeas.append(time_meas)
-        print("time: " + str(time_meas))
+    # list of test cases
 
-    # plot results
-    plt.figure(0)
-    plt.plot(np.array(delay_set)*0.25, delay_tmeas)
-    plt.grid(True, which="both")
-    plt.xlabel('Delay Setting [ns]')
-    plt.ylabel('Delay Measured [ns]')
-    plt.show()
+    collections.OrderedDict()
+    test_cases = collections.OrderedDict([('Id', TofTestCases.TestCaseID),
+                                          ('Calibrate', TofTestCases.TestCaseCalibrate),
+                                          ('Measure', TofTestCases.TestCaseMeasure)])
 
+    # execute test cases
+    for name in test_cases:
+        print('Test Case: ' + name)
+        tc = test_cases[name](fw)
+        tc.execute()
 
 if __name__ == "__main__":
     main()

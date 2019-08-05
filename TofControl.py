@@ -62,7 +62,7 @@ class TofControl(object):
         corrected_distribution = np.array(values) / np.array(dt_per_bin)
         cd_norm = corrected_distribution / np.mean(corrected_distribution)
         cd_norm_std = np.sqrt(np.var(cd_norm))
-        return cd_norm_std
+        return float(cd_norm_std)
 
     def verify_calibartion_period(self, tofp, clock_period):
         n_taps = len(tofp.dt_per_bin)
@@ -97,7 +97,7 @@ class TofControl(object):
         if self.debug >0: print("Period deviation: " + str(period_dev_meas))
         period_std = np.sqrt(np.var(np.array(period_dev_meas)))
         if self.debug >0: print("Period deviation std: " + str(period_std))
-        return period_std
+        return float(period_std)
 
     def measure_delay(self, tofp, n_taps):
 
