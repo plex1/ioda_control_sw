@@ -1,4 +1,4 @@
-from tinydb import TinyDB, Query
+from tinydb import TinyDB, Query, where
 import datetime
 
 
@@ -6,10 +6,18 @@ class AbstractTestCase(object):
 
     def __init__(self, TestCaseName, id=''):
         self.time =datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        prefix = self.time+'_' + TestCaseName
+        prefix = self.time
+        if id != '':
+            prefix = id
+        prefix = prefix+'_' + TestCaseName
         self.logger = Logger(prefix)
         self.checker = Checker(prefix)
+        self.TestCaseName=TestCaseName
+        self.prefix = prefix
 
+    @staticmethod
+    def gen_id(self):
+        return datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
     # @abstractmethod
     def exectue(self):
@@ -25,12 +33,12 @@ class TestCase1(AbstractTestCase):
     def __init__(self, framework=[]):
         self.fw = framework
         TestCaseName = 'TestCase1'
-        super().__init__(TestCaseName)
+        super().__init__(TestCaseName, id)
 
     def execute(self):
         self.checker.check('is_equal', 2, 2, 'test if is equal')
         self.checker.check('is_equal', 2, 3, 'test if is equal')
-        self.logger.add_dataset('measurement1', 'x', [1,2,3,4,5,6,7])
+        self.logger.add_data('measurement1', 'x', [1, 2, 3, 4, 5, 6, 7])
 
     def evaluate(self):
         pass
@@ -47,12 +55,17 @@ class Logger(object):
         self.db = TinyDB('db/' + prefix +'_logger.json')
         if purge:
             self.db.purge_tables()
+        self.query = Query()
 
-    def add_dataset(self, name,  dataset):
+    def add_data(self, name, data):
         self.db.insert({'Name': name,
-                        'dataset' : dataset,
+                        'data' : data,
                         'Time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S")
                         })
+
+    def get_data(self, name):
+        return self.db.search(self.query.Name == name)[0]['dataset']
+
 
     #def add_dataset(self, name, name_1, dataset_1, name_2, dataset_2):
     #    pass
@@ -71,6 +84,7 @@ class Checker(object):
         self.db = TinyDB('db/' + prefix +'_checker.json')
         if purge:
             self.db.purge_tables
+        self.query = Query()
 
     def check(self,  check_type, actual, expected, description):
         eval_checks = {
@@ -111,11 +125,32 @@ class Checker(object):
         if check_ok == False:
             self.num_errors += 1
 
+    def db_get_num_checks(self):
+        return len(self.db.all())
+
+    def db_get_num_error_checks(self):
+        return len(self.db.search(where('CheckOk') == False))
+
+    def get_summary(self):
+        strr='Total checks: '+ str(self.db_get_num_checks()) + ', Number of errors: ' + str(self.db_get_num_error_checks())
+        return strr
+
+    def get_log(self):
+        strr=self.db.all()
+        return strr
+
     def print_summary(self):
-        print('Total Checks: '+ str(self.num_checks) + ', Errors Checks: '+ str(self.num_errors))
+        print(self.get_summary())
 
     def print_log(self):
-        print(self.db.all())
+        print(self.get_log())
+
+    def write_to_file(self, filename):
+        f = open(filename, "w+")
+        f.write(self.get_summary())
+        #f.write(str(self.get_log()))
+        f.close()
+        pass
 
 
 def main():

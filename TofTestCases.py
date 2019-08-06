@@ -2,14 +2,16 @@ from Checker import AbstractTestCase
 from TofControl import TofControl
 from TofProcessing import TofProcessing
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 
 class TestCaseID(AbstractTestCase):
 
-    def __init__(self, framework=[]):
+    def __init__(self, framework=[], id = ''):
         self.fw = framework
         TestCaseName = 'TestCaseID'
-        super().__init__(TestCaseName)
+        super().__init__(TestCaseName, id)
 
     def execute(self):
 
@@ -17,15 +19,15 @@ class TestCaseID(AbstractTestCase):
         self.checker.check('is_equal', reg['id'].read(), 0x1a, 'Read out ID')
 
     def evaluate(self):
-        return self.checker.num_errors == 0
+        self.checker.write_to_file('data/' + self.prefix + '_logger.dat')
 
 
 class TestCaseCalibrate(AbstractTestCase):
 
-    def __init__(self, framework=[]):
+    def __init__(self, framework=[], id = ''):
         self.fw = framework
         TestCaseName = 'TestCaseCalibrate'
-        super().__init__(TestCaseName)
+        super().__init__(TestCaseName, id)
 
     def execute(self):
 
@@ -57,20 +59,48 @@ class TestCaseCalibrate(AbstractTestCase):
         print('period_std  = ' + str(period_std))
         self.checker.check('is_smaller', period_std, 0.03, 'Check period_std [in ns] upper bound')
 
-        self.logger.add_dataset('calibration_histograms pulse', calib_histograms[0].histogram)
-        self.logger.add_dataset('calibration_histograms rand', calib_histograms[1].histogram)
-        self.logger.add_dataset('tofp.dt_per_bin', tofp.dt_per_bin.tolist())
+        self.logger.add_data('calibration_histograms pulse', calib_histograms[0].histogram)
+        self.logger.add_data('calibration_histograms rand', calib_histograms[1].histogram)
+        self.logger.add_data('dt_per_bin', tofp.dt_per_bin.tolist())
 
     def evaluate(self):
-        return self.checker.num_errors == 0
+        self.checker.write_to_file('data/' + self.prefix + '_logger.dat')
 
+        hist_pulse = self.logger.get_data("calibration_histograms pulse") #todo: update name
+        hist_rand = self.logger.get_data("calibration_histograms rand")
+        dt_per_bin = self.logger.get_data("tofp.dt_per_bin")
+
+        # plot results
+        plt.figure(0)
+        plt.plot(np.array(hist_pulse))
+        plt.grid(True, which="both")
+        plt.xlabel('Tap')
+        plt.ylabel('Counts')
+        plt.savefig('data/' + self.prefix+'_pulse.png')
+
+        plt.figure(1)
+        plt.plot(np.array(hist_rand))
+        plt.grid(True, which="both")
+        plt.xlabel('Tap')
+        plt.ylabel('Counts')
+        plt.savefig('data/' + self.prefix+'_rand.png')
+
+        plt.figure(2)
+        plt.plot(np.array(dt_per_bin))
+        plt.grid(True, which="both")
+        plt.xlabel('Tap')
+        plt.ylabel('Delay per Tap [ns]')
+        plt.savefig('data/' + self.prefix+'_dtperbin.png')
+
+        print('num checks: ' + str(self.checker.db_get_num_checks()))
+        print('num error checks: ' + str(self.checker.db_get_num_error_checks()))
 
 class TestCaseMeasure(AbstractTestCase):
 
-    def __init__(self, framework=[]):
+    def __init__(self, framework=[], id = ''):
         self.fw = framework
         TestCaseName = 'TestCaseMeasure'
-        super().__init__(TestCaseName)
+        super().__init__(TestCaseName, id)
 
     def execute(self):
 
@@ -114,9 +144,21 @@ class TestCaseMeasure(AbstractTestCase):
             delay_tmeas.append(time_meas)
             print("time: " + str(time_meas))
 
-        self.logger.add_dataset('calibration_histograms pulse', (np.array(delay_set)*0.25).tolist())
-        self.logger.add_dataset('calibration_histograms rand', delay_tmeas)
+        self.logger.add_data('delay_set', (np.array(delay_set) * 0.25).tolist())
+        self.logger.add_data('delay_meas', delay_tmeas)
 
     def evaluate(self):
-        return self.checker.num_errors == 0
+        #return self.checker.num_errors == 0
+        delay_set = self.logger.get_data("calibration_histograms pulse") #todo update name
+        delay_tmeas = self.logger.get_data("calibration_histograms rand")
+
+        # plot results
+        plt.figure(0)
+        plt.plot(np.array(delay_set) * 0.25, delay_tmeas)
+        plt.grid(True, which="both")
+        plt.xlabel('Delay Setting [ns]')
+        plt.ylabel('Delay Measured [ns]')
+        plt.savefig('data/' + self.prefix+'_measured.png')
+        #plt.show()
+
 

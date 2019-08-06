@@ -3,19 +3,22 @@ from GepinPhySerial import GepinPhySerial
 from Gepin import GepinMaster
 from csr_tofperipheral_manual import csr_tofperipheral
 from registers import Registers
-from TofControl import TofControl
-from TofProcessing import HistogramProcessing
-from TofProcessing import TofProcessing
 import collections
+from Checker import AbstractTestCase
 
-import time
-import numpy as np
-import matplotlib.pyplot as plt
 
 import TofTestCases
 
-def main():
 
+def list_test_cases():
+    # list of test cases
+    collections.OrderedDict()
+    test_cases = collections.OrderedDict([('Id', TofTestCases.TestCaseID),
+                                          ('Calibrate', TofTestCases.TestCaseCalibrate),
+                                          ('Measure', TofTestCases.TestCaseMeasure)])
+    return test_cases
+
+def create_framework():
     # init interface
     gepin_phy = GepinPhySerial('/dev/ttyUSB0', baudrate=115200)
     gepin = GepinMaster(gepin_phy)
@@ -29,48 +32,43 @@ def main():
     # define framework
     fw={}
     fw['registers'] = registers
+    return fw
+
+
+def main():
+
+    # create framework for test
+    fw = create_framework()
 
     # list of test cases
+    test_cases = list_test_cases()
 
-    collections.OrderedDict()
-    test_cases =collections.OrderedDict([('Id', TofTestCases.TestCaseID),
-                                        ('Calibrate', TofTestCases.TestCaseCalibrate),
-                                         ('Measure', TofTestCases.TestCaseMeasure)])
+    id = AbstractTestCase.gen_id()
 
     # execute test cases
     for name in test_cases:
-        print('Test Case: ' + name)
-        tc = test_cases[name](fw)
+        print('Analyzig Test Case: ' + name)
+        tc = test_cases[name](fw, id)
         tc.execute()
+
 
 def analyze(id):
 
-    # init interface
-    gepin_phy = GepinPhySerial('/dev/ttyUSB0', baudrate=115200)
-    gepin = GepinMaster(gepin_phy)
-
-    # init registers
-    test_csri = csr_tofperipheral()
-    registers = Registers(gepin)
-    registers.offset = 0xF0030000
-    registers.populate(test_csri)
-
     # define framework
-    fw = {}
-    fw['registers'] = registers
+    fw = {} # none needed for analyzing
 
     # list of test cases
-
-    collections.OrderedDict()
-    test_cases = collections.OrderedDict([('Id', TofTestCases.TestCaseID),
-                                          ('Calibrate', TofTestCases.TestCaseCalibrate),
-                                          ('Measure', TofTestCases.TestCaseMeasure)])
+    test_cases = list_test_cases()
 
     # execute test cases
     for name in test_cases:
-        print('Test Case: ' + name)
-        tc = test_cases[name](fw)
-        tc.execute()
+        print('Evaluating Test Case: ' + name)
+        tc = test_cases[name](fw, id)
+        tc.evaluate()
+
 
 if __name__ == "__main__":
-    main()
+    #main()
+    id = '20190802-183801'
+    analyze(id)
+
