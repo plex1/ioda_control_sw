@@ -71,7 +71,7 @@ class TofProcessing(object):
     def get_int(self, val):
         return int(np.modf(val)[1])
 
-    def calibrate(self, hist_pulse, hist_rand, clk_period):
+    def calibration_update(self, hist_pulse, hist_rand, clk_period):
 
         if not self.calibrate_bins:
             for i in range(0,len(hist_rand.histogram)):

@@ -5,37 +5,38 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-
 class TestCaseID(AbstractTestCase):
 
-    def __init__(self, framework=[], id = ''):
-        self.fw = framework
+    def __init__(self, id, testif={}):
+        self.testif = testif
         TestCaseName = 'TestCaseID'
         super().__init__(TestCaseName, id)
 
     def execute(self):
-
-        reg = self.fw['registers'].reg
+        AbstractTestCase.execute()
+        reg = self.testif['registers'].reg
         self.checker.check('is_equal', reg['id'].read(), 0x1a, 'Read out ID')
 
     def evaluate(self):
+        AbstractTestCase.evaluate(self)
         self.checker.write_to_file('data/' + self.prefix + '_logger.dat')
 
 
 class TestCaseCalibrate(AbstractTestCase):
 
-    def __init__(self, framework=[], id = ''):
-        self.fw = framework
+    def __init__(self,id, testif={}):
+        self.testif = testif
         TestCaseName = 'TestCaseCalibrate'
         super().__init__(TestCaseName, id)
 
     def execute(self):
+        AbstractTestCase.execute()
 
         n_taps = 100
         clock_period = 25  # 25ns 40MHz clock
 
         # init tofcontrol
-        tofc = TofControl(self.fw['registers'])
+        tofc = TofControl(self.testif['registers'])
         tofc.init()
         tofc.cal_time = 1
 
@@ -47,7 +48,7 @@ class TestCaseCalibrate(AbstractTestCase):
 
         # calibrate
         calib_histograms = tofc.get_calibration_histograms(n_taps)
-        tofp.calibrate(calib_histograms[0], calib_histograms[1], clock_period)
+        tofp.calibration_update(calib_histograms[0], calib_histograms[1], clock_period)
 
         # verify calibration via random bin distribution
         std_norm = tofc.verify_calibration(tofp.dt_per_bin)
@@ -59,16 +60,18 @@ class TestCaseCalibrate(AbstractTestCase):
         print('period_std  = ' + str(period_std))
         self.checker.check('is_smaller', period_std, 0.03, 'Check period_std [in ns] upper bound')
 
-        self.logger.add_data('calibration_histograms pulse', calib_histograms[0].histogram)
-        self.logger.add_data('calibration_histograms rand', calib_histograms[1].histogram)
-        self.logger.add_data('dt_per_bin', tofp.dt_per_bin.tolist())
+        self.data_logger.add_data('calibration_histograms pulse', calib_histograms[0].histogram)
+        self.data_logger.add_data('calibration_histograms rand', calib_histograms[1].histogram)
+        self.data_logger.add_data('dt_per_bin', tofp.dt_per_bin.tolist())
 
     def evaluate(self):
+        AbstractTestCase.evaluate(self)
+
         self.checker.write_to_file('data/' + self.prefix + '_logger.dat')
 
-        hist_pulse = self.logger.get_data("calibration_histograms pulse") #todo: update name
-        hist_rand = self.logger.get_data("calibration_histograms rand")
-        dt_per_bin = self.logger.get_data("tofp.dt_per_bin")
+        hist_pulse = self.data_logger.get_data("calibration_histograms pulse") #todo: update name
+        hist_rand = self.data_logger.get_data("calibration_histograms rand")
+        dt_per_bin = self.data_logger.get_data("tofp.dt_per_bin")
 
         # plot results
         plt.figure(0)
@@ -92,38 +95,24 @@ class TestCaseCalibrate(AbstractTestCase):
         plt.ylabel('Delay per Tap [ns]')
         plt.savefig('data/' + self.prefix+'_dtperbin.png')
 
-        print('num checks: ' + str(self.checker.db_get_num_checks()))
-        print('num error checks: ' + str(self.checker.db_get_num_error_checks()))
-
 class TestCaseMeasure(AbstractTestCase):
 
-    def __init__(self, framework=[], id = ''):
-        self.fw = framework
+    def __init__(self, id, testif={}):
+        self.testif = testif
         TestCaseName = 'TestCaseMeasure'
         super().__init__(TestCaseName, id)
 
     def execute(self):
+        AbstractTestCase.execute()
+        registers = self.testif['registers']
 
-        registers = self.fw['registers']
-
-        n_taps = 100
-        clock_period = 25  # 25ns 40MHz clock
         variable_slot = True
 
         # init tofcontrol
         tofc = TofControl(registers)
         tofc.init()
         tofc.cal_time = 1
-
-        # init tof processing
-        tofp = TofProcessing()
-        tofp.use_correlation = False
-        tofp.use_midpoint = True
-        tofp.calibrate_bins = True
-
-        # calibrate
-        calib_histograms = tofc.get_calibration_histograms(n_taps)
-        tofp.calibrate(calib_histograms[0], calib_histograms[1], clock_period)
+        tofc.calibrate()
 
         # settings for time measurements
         registers.reg['trigTestPeriod'].write(20)
@@ -140,17 +129,18 @@ class TestCaseMeasure(AbstractTestCase):
                 slot_select = registers.reg['averageFilter'].read()
                 print('Slot select' + str(slot_select))
                 registers.histogramFilter.write(2 ** 16 + slot_select)
-            time_meas = tofc.measure_delay(tofp, n_taps)
+            time_meas = tofc.measure_delay()
             delay_tmeas.append(time_meas)
             print("time: " + str(time_meas))
 
-        self.logger.add_data('delay_set', (np.array(delay_set) * 0.25).tolist())
-        self.logger.add_data('delay_meas', delay_tmeas)
+        self.data_logger.add_data('delay_set', (np.array(delay_set) * 0.25).tolist())
+        self.data_logger.add_data('delay_meas', delay_tmeas)
 
     def evaluate(self):
-        #return self.checker.num_errors == 0
-        delay_set = self.logger.get_data("calibration_histograms pulse") #todo update name
-        delay_tmeas = self.logger.get_data("calibration_histograms rand")
+        AbstractTestCase.evaluate(self)
+
+        delay_set = self.data_logger.get_data("calibration_histograms pulse")
+        delay_tmeas = self.data_logger.get_data("calibration_histograms rand")
 
         # plot results
         plt.figure(0)
@@ -159,6 +149,5 @@ class TestCaseMeasure(AbstractTestCase):
         plt.xlabel('Delay Setting [ns]')
         plt.ylabel('Delay Measured [ns]')
         plt.savefig('data/' + self.prefix+'_measured.png')
-        #plt.show()
 
 

@@ -5,6 +5,7 @@ from csr_tofperipheral_manual import csr_tofperipheral
 from registers import Registers
 import collections
 from Checker import AbstractTestCase
+from RequirementsManager import RequirementsManager
 
 
 import TofTestCases
@@ -18,7 +19,7 @@ def list_test_cases():
                                           ('Measure', TofTestCases.TestCaseMeasure)])
     return test_cases
 
-def create_framework():
+def create_testif():
     # init interface
     gepin_phy = GepinPhySerial('/dev/ttyUSB0', baudrate=115200)
     gepin = GepinMaster(gepin_phy)
@@ -37,8 +38,8 @@ def create_framework():
 
 def main():
 
-    # create framework for test
-    fw = create_framework()
+    # create test interfaces for tester
+    testif = create_testif()
 
     # list of test cases
     test_cases = list_test_cases()
@@ -48,14 +49,11 @@ def main():
     # execute test cases
     for name in test_cases:
         print('Analyzig Test Case: ' + name)
-        tc = test_cases[name](fw, id)
+        tc = test_cases[name](id, testif)
         tc.execute()
 
 
 def analyze(id):
-
-    # define framework
-    fw = {} # none needed for analyzing
 
     # list of test cases
     test_cases = list_test_cases()
@@ -63,12 +61,27 @@ def analyze(id):
     # execute test cases
     for name in test_cases:
         print('Evaluating Test Case: ' + name)
-        tc = test_cases[name](fw, id)
+        tc = test_cases[name](id)
         tc.evaluate()
 
+def collect_results(id):
+
+    # list of test cases
+    test_cases = list_test_cases()
+    rm = RequirementsManager()
+
+    # execute test cases
+    for name in test_cases:
+        tc = test_cases[name](id)
+        rm.add_checker(tc.checker)
+
+    rm.collect_checks()
+    rm.check_requirements()
+    rm.print_results()
 
 if __name__ == "__main__":
     #main()
     id = '20190802-183801'
     analyze(id)
+    collect_results(id)
 

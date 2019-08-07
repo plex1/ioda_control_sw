@@ -9,6 +9,8 @@ class TofControl(object):
         self.tofregs = regs
         self.debug = 0
         self.cal_time = 0.5
+        self.n_taps = 100
+        self.clock_period = 25  # 25ns 40MHz clock
 
     def modes(self, modename):
         modedef = {'reset': 0, 'record': 1, 'resetaddr': 3, 'read': 2}
@@ -53,6 +55,17 @@ class TofControl(object):
         hist_pulse = HistogramProcessing(values)
 
         return [hist_pulse, hist_rand]
+
+    def calibrate(self):
+        # init tof processing
+        self.tofp = TofProcessing()
+        self.tofp.use_correlation = False
+        self.tofp.use_midpoint = True
+        self.tofp.calibrate_bins = True
+
+        # calibrate
+        calib_histograms = self.get_calibration_histograms(self.n_taps)
+        self.tofp.calibration_update(calib_histograms[0], calib_histograms[1], self.clock_period)
 
     def verify_calibration(self, dt_per_bin):
         n_taps = len(dt_per_bin)
@@ -99,7 +112,11 @@ class TofControl(object):
         if self.debug >0: print("Period deviation std: " + str(period_std))
         return float(period_std)
 
-    def measure_delay(self, tofp, n_taps):
+    def measure_delay(self):
+        time_meas = self.measure_delay_tofp(self.tofp, self.n_taps)
+        return time_meas
+
+    def measure_delay_tofp(self, tofp, n_taps):
 
         slot_select = self.tofregs.reg['averageFilter'].read()
         slot_select = int(slot_select+1)

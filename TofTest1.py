@@ -42,7 +42,7 @@ def main():
 
     # calibrate
     calib_histograms = tofc.get_calibration_histograms(n_taps)
-    tofp.calibrate(calib_histograms[0], calib_histograms[1], clock_period)
+    tofp.calibration_update(calib_histograms[0], calib_histograms[1], clock_period)
 
     # verify calibration via random bin distribution
     std_norm = tofc.verify_calibration(tofp.dt_per_bin)
@@ -68,7 +68,7 @@ def main():
             slot_select = registers.reg['averageFilter'].read()
             print('Slot select'+str(slot_select))
             registers.histogramFilter.write(2 ** 16 + slot_select)
-        time_meas=tofc.measure_delay(tofp, n_taps)
+        time_meas=tofc.measure_delay_tofp(tofp, n_taps)
         delay_tmeas.append(time_meas)
         print("time: " + str(time_meas))
 
