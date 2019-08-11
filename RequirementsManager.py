@@ -5,12 +5,13 @@ import Checker
 
 class RequirementsManager(object):
 
-    def __init__(self, prefix=''):
+    def __init__(self, prefix='latest'):
         self.db = TinyDB('db/' + prefix +'_requirements.json')
         self.query = Query()
         self.db_results = TinyDB('db/' + prefix + '_requirements_results.json')
         self.checkers = []
         self.verbose = True
+        self.prefix = prefix
 
     def set_checker_list(self, checker_list):
         self.checkers = checker_list
@@ -40,18 +41,24 @@ class RequirementsManager(object):
                         })
 
     def collect_checks(self):
-        print('Checker Results:')
-        for checker in self.checkers:
-            print('TestID          : ' + checker.testid)
-            print('Number of checks: ' + str(checker.db_get_num_checks()))
-            print('Number of errors: ' + str(checker.db_get_num_error_checks()))
-            for check in checker.db.all():
-                print('- Check Description: ' + check['Description'] + ', Type: ' + str(check['Type']) +
-                      ', Actual: ' + str(check['Actual']) +
-                      ', Expected: ' + str(check['Expected'])
-                       )
 
-            print('--')
+        st = 'Checker Results:\n'
+
+        for checker in self.checkers:
+            st += 'TestID          : ' + checker.testid + '\n'
+            st += 'Number of checks: ' + str(checker.db_get_num_checks()) + '\n'
+            st += 'Number of errors: ' + str(checker.db_get_num_error_checks()) + '\n'
+
+            for check in checker.db.all():
+                st += '- Check Description: ' + check['Description'] + ', Type: ' + str(check['Type'])
+                st += ', Actual: ' + str(check['Actual'])
+                st += ', Expected: ' + str(check['Expected']) + '\n'
+            st += '--' + '\n'
+
+        print(st)
+        file = open('db/' + self.prefix + '_checker_results.txt', 'w')
+        file.write(st)
+        file.close()
 
     def check_requirements(self):
 
@@ -90,6 +97,7 @@ class RequirementsManager(object):
             st += ', number of checks: ' + str(req['checks_total'])
             st += ', number of errors: ' + str(req['checks_error']) + ', status: ' + req['status']
             print(st)
+
 
 
 def main():

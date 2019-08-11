@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 class TestCaseID(AbstractTestCase):
 
-    def __init__(self, id, testif={}):
+    def __init__(self, id, testif={}): #todo: give the classes the Controller as a standard input instead of testif?
         self.testif = testif
         TestCaseName = 'TestCaseID'
         super().__init__(TestCaseName, id)
@@ -36,7 +36,7 @@ class TestCaseCalibrate(AbstractTestCase):
         clock_period = 25  # 25ns 40MHz clock
 
         # init tofcontrol
-        tofc = TofControl(self.testif['registers'])
+        tofc = TofControl(self.testif)
         tofc.init()
         tofc.cal_time = 1
 
@@ -112,7 +112,7 @@ class TestCaseMeasure(AbstractTestCase):
         variable_slot = True
 
         # init tofcontrol
-        tofc = TofControl(registers)
+        tofc = TofControl(self.testif)
         tofc.init()
         tofc.cal_time = 1
         tofc.calibrate()

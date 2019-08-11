@@ -5,12 +5,13 @@ import numpy as np
 
 class TofControl(object):
 
-    def __init__(self, regs):
-        self.tofregs = regs
+    def __init__(self, testif, sub_unit = []): # todo abstract class for controllers with this constructor
+        self.tofregs = testif['registers']
         self.debug = 0
         self.cal_time = 0.5
         self.n_taps = 100
         self.clock_period = 25  # 25ns 40MHz clock
+        self.sub_unit = []
 
     def modes(self, modename):
         modedef = {'reset': 0, 'record': 1, 'resetaddr': 3, 'read': 2}

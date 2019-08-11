@@ -49,19 +49,19 @@ class Unit(object):
 
     def populate(self, unit_hierarchy, controllers):
 
+        for su in unit_hierarchy.get_sub_units(self.name, False):
+            self.add_sub_unit(su)
+            self.sub_unit[su].populate(unit_hierarchy, controllers)
+
         try:
             ctrl_name = controllers.get_controller(self.name)
             p, m = ctrl_name.rsplit('.', 1)
             mod = importlib.import_module(p)
             ctrl = getattr(mod, m)
-            self.set_controller(ctrl(self.testif))
+            self.set_controller(ctrl(self.testif, self.sub_unit)) # todo: instance self.sub_unit could also be passed to controller
         except:
             self.set_controller(None)
             print("Controller for" + self.name + " not found")
-
-        for su in unit_hierarchy.get_sub_units(self.name, False):
-            self.add_sub_unit(su)
-            self.sub_unit[su].populate(unit_hierarchy, controllers)
 
 
 class UnitHierarchy(object):
@@ -97,6 +97,7 @@ class UnitHierarchy(object):
     def get_sub_units_incl(self, unit_name, recursive=True):
         return [unit_name] + self.get_sub_units(unit_name, recursive)
 
+
 class Controllers(object):
 
     def __init__(self, prefix='1', purge=True):
@@ -114,7 +115,6 @@ class Controllers(object):
     def get_controller(self, unit_name):
         unitfound = self.db.search(where('UnitName') == unit_name)[0]
         return unitfound['Controller']
-
 
 
 def main():
