@@ -38,20 +38,20 @@ class AbstractTestCase(object):
         self.logger = logger
 
     @staticmethod
-    def gen_id(self):
+    def gen_id():
         return datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
     # @abstractmethod
     # execute test
     def execute(self):
         self.logger.info('Start Test Execution ')
-        self.checker.start_exec
+        self.checker.start_exec()
 
     #@abstractmethod
     # post processing
     def evaluate(self):
         self.logger.info('Start Test Evaluation ')
-        self.checker.start_eval
+        self.checker.start_eval()
 
 
 class TestCase1(AbstractTestCase):
@@ -76,12 +76,29 @@ class DataLogger(object):
         self.num_errors = 0
         self.log = []
         self.testid = 'Test1'
+        self.stage = 'T'
         self.verbose = True
         self.tags = []
         self.db = TinyDB('db/' + prefix +'_logger.json')
         if purge:
             self.db.purge_tables()
         self.query = Query()
+
+    # stage: T: check during test execution
+    #        P: check during post processing (evaluate)
+    def set_stage(self, stage):
+        self.stage = stage
+
+    def remove_stage(self, stage):
+        self.db.remove(where('Stage') == stage)
+
+    def start_eval(self):
+        self.set_stage('P')
+        self.remove_stage('P')
+
+    def start_exec(self):
+        self.set_stage('T')
+        self.remove_stage('T')
 
     def add_data(self, name, data):
         self.db.insert({'Name': name,
@@ -91,11 +108,7 @@ class DataLogger(object):
                         })
 
     def get_data(self, name):
-        return self.db.search(self.query.Name == name)[0]['dataset']
-
-
-    #def add_dataset(self, name, name_1, dataset_1, name_2, dataset_2):
-    #    pass
+        return self.db.search(self.query.Name == name)[0]['data']
 
 
 class Checker(object):
@@ -136,7 +149,7 @@ class Checker(object):
         self.set_stage('P')
         self.remove_stage('P')
 
-    def start_eval(self):
+    def start_exec(self):
         self.set_stage('T')
         self.remove_stage('T')
 

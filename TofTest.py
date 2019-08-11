@@ -6,6 +6,10 @@ from registers import Registers
 import collections
 from Checker import AbstractTestCase
 from RequirementsManager import RequirementsManager
+from TestCases import TestCases
+from TestCases import UnitHierarchy
+from TestCases import Unit
+from TestCases import Controllers
 
 
 import TofTestCases
@@ -19,6 +23,33 @@ def list_test_cases():
                                           ('Measure', TofTestCases.TestCaseMeasure)])
     return test_cases
 
+def list_test_cases2():
+    # list of test cases
+    tc = TestCases()
+    tc.add_test_case('TofTestCases.TestCaseID', ['toffpga'])
+    tc.add_test_case('TofTestCases.TestCaseCalibrate', ['toffpga'])
+    tc.add_test_case('TofTestCases.TestCaseMeasure', ['toffpga'])
+
+    return tc
+
+def list_controllers():
+    # list of test cases
+    con = Controllers()
+    con.add_controller('toffpga', 'TofControl.TofControl')
+
+    return con
+
+def gen_hierarchy():
+    tch = UnitHierarchy()
+    tch.add_unit('ioda', ['motorcontroller_unit', 'toffpga'])
+    tch.add_unit('motorcontroller_unit', ['motorcontrollerpower_unit'])
+    return tch
+
+def gen_setup(hierarchy, controllers, testif):
+    ioda_setup = Unit('ioda', testif)
+    ioda_setup.populate(hierarchy, controllers)
+    return ioda_setup
+
 def create_testif():
     # init interface
     gepin_phy = GepinPhySerial('/dev/ttyUSB0', baudrate=115200)
@@ -30,13 +61,14 @@ def create_testif():
     registers.offset = 0xF0030000
     registers.populate(test_csri)
 
-    # define framework
-    fw={}
-    fw['registers'] = registers
-    return fw
+    # define test interfaces
+    test_ifs={}
+    test_ifs['registers'] = registers
+    test_ifs['gepin'] = gepin
+    return test_ifs
 
 
-def main():
+def main(id):
 
     # create test interfaces for tester
     testif = create_testif()
@@ -44,7 +76,6 @@ def main():
     # list of test cases
     test_cases = list_test_cases()
 
-    id = AbstractTestCase.gen_id()
 
     # execute test cases
     for name in test_cases:
@@ -56,13 +87,24 @@ def main():
 def analyze(id):
 
     # list of test cases
-    test_cases = list_test_cases()
+    hierarchy = gen_hierarchy()
+    test_cases = list_test_cases2().get_test_cases_units(hierarchy.get_sub_units_incl('ioda'))
 
     # execute test cases
     for name in test_cases:
         print('Evaluating Test Case: ' + name)
-        tc = test_cases[name](id)
+        tc = eval(name)(id) # test cases classes could also be populated in external function such as in unit.populate
         tc.evaluate()
+
+def control():
+
+    testif =  create_testif()
+    hierarchy = gen_hierarchy()
+    controllers = list_controllers()
+
+    ioda_setup = gen_setup(hierarchy, controllers, testif)
+
+    print('Read: ID=' + hex(ioda_setup.sub_unit['toffpga'].testif['registers'].reg['id'].read()))
 
 def collect_results(id):
 
@@ -70,7 +112,7 @@ def collect_results(id):
     test_cases = list_test_cases()
     rm = RequirementsManager()
 
-    # execute test cases
+    # collect checkers
     for name in test_cases:
         tc = test_cases[name](id)
         rm.add_checker(tc.checker)
@@ -80,8 +122,13 @@ def collect_results(id):
     rm.print_results()
 
 if __name__ == "__main__":
-    #main()
-    id = '20190802-183801'
+
+    id = AbstractTestCase.gen_id()
+    #id = '20190802-183801'
+    print("ID: " + id)
+
+    main(id)
+    control()
     analyze(id)
     collect_results(id)
 

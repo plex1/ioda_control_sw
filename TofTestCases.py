@@ -13,7 +13,7 @@ class TestCaseID(AbstractTestCase):
         super().__init__(TestCaseName, id)
 
     def execute(self):
-        AbstractTestCase.execute()
+        AbstractTestCase.execute(self)
         reg = self.testif['registers'].reg
         self.checker.check('is_equal', reg['id'].read(), 0x1a, 'Read out ID')
 
@@ -30,7 +30,7 @@ class TestCaseCalibrate(AbstractTestCase):
         super().__init__(TestCaseName, id)
 
     def execute(self):
-        AbstractTestCase.execute()
+        AbstractTestCase.execute(self)
 
         n_taps = 100
         clock_period = 25  # 25ns 40MHz clock
@@ -60,8 +60,8 @@ class TestCaseCalibrate(AbstractTestCase):
         print('period_std  = ' + str(period_std))
         self.checker.check('is_smaller', period_std, 0.03, 'Check period_std [in ns] upper bound')
 
-        self.data_logger.add_data('calibration_histograms pulse', calib_histograms[0].histogram)
-        self.data_logger.add_data('calibration_histograms rand', calib_histograms[1].histogram)
+        self.data_logger.add_data('calibration_histograms_pulse', calib_histograms[0].histogram)
+        self.data_logger.add_data('calibration_histograms_rand', calib_histograms[1].histogram)
         self.data_logger.add_data('dt_per_bin', tofp.dt_per_bin.tolist())
 
     def evaluate(self):
@@ -69,27 +69,30 @@ class TestCaseCalibrate(AbstractTestCase):
 
         self.checker.write_to_file('data/' + self.prefix + '_logger.dat')
 
-        hist_pulse = self.data_logger.get_data("calibration_histograms pulse") #todo: update name
-        hist_rand = self.data_logger.get_data("calibration_histograms rand")
-        dt_per_bin = self.data_logger.get_data("tofp.dt_per_bin")
+        hist_pulse = self.data_logger.get_data("calibration_histograms_pulse")
+        hist_rand = self.data_logger.get_data("calibration_histograms_rand")
+        dt_per_bin = self.data_logger.get_data("dt_per_bin")
 
         # plot results
         plt.figure(0)
-        plt.plot(np.array(hist_pulse))
+        plt.clf()
+        plt.plot(np.array(hist_pulse), 'x-')
         plt.grid(True, which="both")
         plt.xlabel('Tap')
         plt.ylabel('Counts')
         plt.savefig('data/' + self.prefix+'_pulse.png')
 
         plt.figure(1)
-        plt.plot(np.array(hist_rand))
+        plt.clf()
+        plt.plot(np.array(hist_rand), 'x-')
         plt.grid(True, which="both")
         plt.xlabel('Tap')
         plt.ylabel('Counts')
         plt.savefig('data/' + self.prefix+'_rand.png')
 
         plt.figure(2)
-        plt.plot(np.array(dt_per_bin))
+        plt.clf()
+        plt.plot(np.array(dt_per_bin), 'x-')
         plt.grid(True, which="both")
         plt.xlabel('Tap')
         plt.ylabel('Delay per Tap [ns]')
@@ -103,7 +106,7 @@ class TestCaseMeasure(AbstractTestCase):
         super().__init__(TestCaseName, id)
 
     def execute(self):
-        AbstractTestCase.execute()
+        AbstractTestCase.execute(self)
         registers = self.testif['registers']
 
         variable_slot = True
@@ -126,7 +129,7 @@ class TestCaseMeasure(AbstractTestCase):
         for delay in delay_set:
             tofc.set_delay(delay)
             if variable_slot:
-                slot_select = registers.reg['averageFilter'].read()
+                slot_select = registers.reg['averageFilter'].read() + 1 # todo: tbd +1?
                 print('Slot select' + str(slot_select))
                 registers.histogramFilter.write(2 ** 16 + slot_select)
             time_meas = tofc.measure_delay()
@@ -139,11 +142,12 @@ class TestCaseMeasure(AbstractTestCase):
     def evaluate(self):
         AbstractTestCase.evaluate(self)
 
-        delay_set = self.data_logger.get_data("calibration_histograms pulse")
-        delay_tmeas = self.data_logger.get_data("calibration_histograms rand")
+        delay_set = self.data_logger.get_data("delay_set")
+        delay_tmeas = self.data_logger.get_data("delay_meas")
 
         # plot results
         plt.figure(0)
+        plt.clf()
         plt.plot(np.array(delay_set) * 0.25, delay_tmeas)
         plt.grid(True, which="both")
         plt.xlabel('Delay Setting [ns]')
