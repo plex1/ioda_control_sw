@@ -7,12 +7,12 @@ import logging
 
 class AbstractTestCase(object):
 
-    def __init__(self, TestCaseName, id=''):
+    def __init__(self, TestCaseName, id='', unit_name=''):
         self.time =datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         prefix = self.time
         if id != '':
             prefix = id
-        prefix = prefix+'_' + TestCaseName
+        prefix = prefix+'_' + unit_name + '+' + TestCaseName
         self.data_logger = DataLogger(prefix)
         self.checker = Checker(prefix)
         self.TestCaseName=TestCaseName
@@ -63,26 +63,22 @@ class TestCases(object):
             self.db.purge_tables()
         self.query = Query()
 
-    def add_test_case(self, name, tags):
-        self.db.insert({'Name': name,
-                        'tags' : tags, #['unit_' + tags[0]],
+    def add_test_case(self, name, units, tags=[]):
+        self.db.insert({'name': name,
+                        'units': units,
+                        'tags' : tags,
                         'Time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S")
                         })
 
     def get_test_cases(self):
         test_case_list = []
-        for item in self.db.all():
-            test_case_list.append(item['Name'])
-        return test_case_list
+        return self.db.all()
 
     def get_test_cases_units(self, unit_list):
         test_cases = []
         for unit in unit_list:
-            test_cases += self.db.search(self.query.tags.any(str(unit))) #todo: shouldn't work with 'unit_' + unit
-        test_case_list = []
-        for item in test_cases:
-            test_case_list.append(item['Name'])
-        return test_case_list
+            test_cases += self.db.search(self.query.units.any(str(unit))) #todo: shouldn't work with 'unit_' + unit
+        return test_cases
 
 import importlib
 
@@ -107,12 +103,8 @@ class Unit(object):
             self.sub_unit[su].populate(unit_hierarchy, controllers)
 
         try:
-            ctrl_name = controllers.get_controller(self.name)
-            p, m = ctrl_name.rsplit('.', 1)
-            mod = importlib.import_module(p)
-            ctrl = getattr(mod, m)
-            parameter = controllers.get_controller_parameters(self.name)
-            self.set_controller(ctrl(self.testif, self.sub_unit)) # todo: instance self.sub_unit could also be passed to controller
+            ctrl = controllers.get_controller_instance(self.name)
+            self.set_controller(ctrl) # todo: instance self.sub_unit could also be passed to controller
         except:
             self.set_controller(None)
             print("Controller for" + self.name + " not found")
@@ -120,20 +112,25 @@ class Unit(object):
 
 class UnitHierarchy(object):
 
+    # todo: return unit dictionay, then write a function which can filter for tags and one that returns just a list of names
+    # this allows for easy filtering for tags in units and test cases: filterout and filter keep (standard)
+    #
+    # todo: ++++=++++++++++++++++++++++++++++++++++++++++++
     def __init__(self, prefix='1', purge=True):
         self.db = TinyDB('db/' + prefix +'_module_hierarchy.json')
         if purge:
             self.db.purge_tables()
         self.query = Query()
 
-    def add_unit(self, name, sub_units):
-        self.db.insert({'Name': name,
+    def add_unit(self, name, sub_units, tags = []):
+        self.db.insert({'name': name,
                         'sub_units' : sub_units,
-                        'Time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S")
+                        'Time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
+                        'tags' : tags
                         })
 
     def get_sub_units(self, unit_name, recursive=True):
-        unitfound = self.db.search(where('Name') == unit_name)
+        unitfound = self.db.search(where('name') == unit_name)
         if len(unitfound)>0:
             unit = unitfound[0]
             sub_units = unit['sub_units']
@@ -175,6 +172,14 @@ class Controllers(object):
     def get_controller_parameters(self, unit_name):
         unitfound = self.db.search(where('UnitName') == unit_name)[0]
         return unitfound['Parameters']
+
+    def get_controller_instance(self, unit_name):
+        ctrl_name = self.get_controller(unit_name)
+        p, m = ctrl_name.rsplit('.', 1)
+        mod = importlib.import_module(p)
+        ctrl = getattr(mod, m)
+        parameters = self.get_controller_parameters(unit_name)
+        return ctrl(self.testif, self.sub_unit, parameters)
 
 
 def main():

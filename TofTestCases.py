@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 
 class TestCaseID(AbstractTestCase):
 
-    def __init__(self, id, testif={}): #todo: give the classes the Controller as a standard input instead of testif?
+    def __init__(self, id, unit_name='', testif={}, controller=None):
         self.testif = testif
         TestCaseName = 'TestCaseID'
-        super().__init__(TestCaseName, id)
+        super().__init__(TestCaseName, id, unit_name)
 
     def execute(self):
         AbstractTestCase.execute(self)
@@ -24,10 +24,10 @@ class TestCaseID(AbstractTestCase):
 
 class TestCaseCalibrate(AbstractTestCase):
 
-    def __init__(self,id, testif={}):
+    def __init__(self,id, unit_name='', testif={}, controller=None):
         self.testif = testif
         TestCaseName = 'TestCaseCalibrate'
-        super().__init__(TestCaseName, id)
+        super().__init__(TestCaseName, id, unit_name)
 
     def execute(self):
         AbstractTestCase.execute(self)
@@ -100,10 +100,10 @@ class TestCaseCalibrate(AbstractTestCase):
 
 class TestCaseMeasure(AbstractTestCase):
 
-    def __init__(self, id, testif={}):
+    def __init__(self, id, unit_name='', testif={}, controller=None):
         self.testif = testif
         TestCaseName = 'TestCaseMeasure'
-        super().__init__(TestCaseName, id)
+        super().__init__(TestCaseName, id, unit_name)
 
     def execute(self):
         AbstractTestCase.execute(self)

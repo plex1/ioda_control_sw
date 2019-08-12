@@ -48,7 +48,7 @@ def create_testif():
 
 # End Define the project setup ---------------------------------------------------------
 
-
+# todo mode Main control to TestEnv file
 class TestEnvMainControl(object):
 
     def __init__(self, testif, hierarchy, controllers, testcases, requirements):
@@ -77,10 +77,15 @@ class TestEnvMainControl(object):
                 test_cases = self.testcases.get_test_cases_units([unit])
 
         # execute test cases
-        for name in test_cases:
-            print('Running Test Case: ' + name)
-            tc = eval(name)(self.id, self.testif) # test cases classes could also be populated in external function such as in unit.populate
-            tc.execute()
+        for test_case in test_cases:
+            # todo add filtering for test case tags
+            print('Running Test Case: ' + test_case['name'])
+            for test_case_unit in test_case['units']:
+                if unit == '' or unit == unit:
+                    tc = eval(test_case['name'])(self.id, test_case_unit, self.testif,
+                                                 self.controllers.get_controller_instance(test_case_unit))
+                    # todo: test cases classes could also be populated in external function such as in unit.populate
+                    tc.execute()
 
     def analyze(self, unit = '', recursive=True):
 
@@ -94,11 +99,16 @@ class TestEnvMainControl(object):
                 test_cases = self.testcases.get_test_cases_units([unit])
 
 
-        # execute test cases
-        for name in test_cases:
-            print('Evaluating Test Case: ' + name)
-            tc = eval(name)(self.id) # test cases classes could also be populated in external function such as in unit.populate
-            tc.evaluate()
+        # evaluate test cases
+        for test_case in test_cases:
+            # todo add filtering for tags
+            print('Running Test Case: ' + test_case['name'])
+            for test_case_unit in test_case['units']:
+                if unit == '' or unit == unit:
+                    tc = eval(test_case['name'])(self.id, test_case_unit, self.testif,
+                                                 self.controllers.get_controller_instance(test_case_unit))
+                    # todo: test cases classes could also be populated in external function such as in unit.populate
+                    tc.evaluate()
 
     def gen_setup(self, hierarchy, controllers, testif, top_unit = 'ioda'):
         ioda_setup = Unit(top_unit, testif)
