@@ -1,6 +1,59 @@
 from tinydb import TinyDB, Query, where
 import datetime
+from TestEnvLog import DataLogger
+from TestEnvLog import Checker
+import logging
 
+
+class AbstractTestCase(object):
+
+    def __init__(self, TestCaseName, id=''):
+        self.time =datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        prefix = self.time
+        if id != '':
+            prefix = id
+        prefix = prefix+'_' + TestCaseName
+        self.data_logger = DataLogger(prefix)
+        self.checker = Checker(prefix)
+        self.TestCaseName=TestCaseName
+        self.prefix = prefix
+
+        # create logger with 'spam_application'
+        logger = logging.getLogger(prefix)
+        logger.setLevel(logging.DEBUG)
+        # create file handler which logs even debug messages
+        fh = logging.FileHandler('db/' + prefix + '.log')
+        fh.setLevel(logging.DEBUG)
+        # create console handler with a higher log level
+        #ch = logging.StreamHandler()
+        #ch.setLevel(logging.DEBUG)
+        # create formatter and add it to the handlers
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        fh.setFormatter(formatter)
+        #ch.setFormatter(formatter)
+        # add the handlers to the logger
+        logger.addHandler(fh)
+        #logger.addHandler(ch)
+
+        logger.info('creating an instance '+ prefix)
+
+        self.logger = logger
+
+    @staticmethod
+    def gen_id():
+        return datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    # @abstractmethod
+    # execute test
+    def execute(self):
+        self.logger.info('Start Test Execution ')
+        self.checker.start_exec()
+
+    #@abstractmethod
+    # post processing
+    def evaluate(self):
+        self.logger.info('Start Test Evaluation ')
+        self.checker.start_eval()
 
 class TestCases(object):
 
@@ -58,6 +111,7 @@ class Unit(object):
             p, m = ctrl_name.rsplit('.', 1)
             mod = importlib.import_module(p)
             ctrl = getattr(mod, m)
+            parameter = controllers.get_controller_parameters(self.name)
             self.set_controller(ctrl(self.testif, self.sub_unit)) # todo: instance self.sub_unit could also be passed to controller
         except:
             self.set_controller(None)
@@ -106,15 +160,21 @@ class Controllers(object):
             self.db.purge_tables()
         self.query = Query()
 
-    def add_controller(self, unit_name, controller, tags=[]):
+    def add_controller(self, unit_name, controller, parameters={}, tags=[]):
         self.db.insert({'UnitName': unit_name,
                         'Controller' : controller,
                         'Tags' : tags,
+                        'Parameters' : parameters,
                         'Time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S")
                         })
+
     def get_controller(self, unit_name):
         unitfound = self.db.search(where('UnitName') == unit_name)[0]
         return unitfound['Controller']
+
+    def get_controller_parameters(self, unit_name):
+        unitfound = self.db.search(where('UnitName') == unit_name)[0]
+        return unitfound['Parameters']
 
 
 def main():

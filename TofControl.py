@@ -3,15 +3,31 @@ from TofProcessing import HistogramProcessing
 from TofProcessing import TofProcessing
 import numpy as np
 
+from csr_tofperipheral_manual import csr_tofperipheral
+from registers import Registers
+
+
 class TofControl(object):
 
-    def __init__(self, testif, sub_unit = []): # todo abstract class for controllers with this constructor
-        self.tofregs = testif['registers']
+    def __init__(self, testif, sub_units = [], parameters={}): # todo abstract class for controllers with this constructor
+
         self.debug = 0
         self.cal_time = 0.5
         self.n_taps = 100
         self.clock_period = 25  # 25ns 40MHz clock
-        self.sub_unit = []
+        self.sub_units = sub_units
+        self.parameters = parameters
+
+
+        # init registers
+        test_csri = csr_tofperipheral()
+        registers = Registers(testif['gepin'])
+        if self.parameters.has_key('gepin_offset'):
+            registers.offset = parameters['gepin_offset']
+        else:
+            registers.offset = 0xF0030000
+        registers.populate(test_csri)
+        self.tofregs = registers
 
     def modes(self, modename):
         modedef = {'reset': 0, 'record': 1, 'resetaddr': 3, 'read': 2}

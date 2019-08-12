@@ -1,73 +1,6 @@
 from tinydb import TinyDB, Query, where
 import datetime
-import logging
 
-
-class AbstractTestCase(object):
-
-    def __init__(self, TestCaseName, id=''):
-        self.time =datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        prefix = self.time
-        if id != '':
-            prefix = id
-        prefix = prefix+'_' + TestCaseName
-        self.data_logger = DataLogger(prefix)
-        self.checker = Checker(prefix)
-        self.TestCaseName=TestCaseName
-        self.prefix = prefix
-
-        # create logger with 'spam_application'
-        logger = logging.getLogger(prefix)
-        logger.setLevel(logging.DEBUG)
-        # create file handler which logs even debug messages
-        fh = logging.FileHandler('db/' + prefix + '.log')
-        fh.setLevel(logging.DEBUG)
-        # create console handler with a higher log level
-        #ch = logging.StreamHandler()
-        #ch.setLevel(logging.DEBUG)
-        # create formatter and add it to the handlers
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(formatter)
-        #ch.setFormatter(formatter)
-        # add the handlers to the logger
-        logger.addHandler(fh)
-        #logger.addHandler(ch)
-
-        logger.info('creating an instance '+ prefix)
-
-        self.logger = logger
-
-    @staticmethod
-    def gen_id():
-        return datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-
-    # @abstractmethod
-    # execute test
-    def execute(self):
-        self.logger.info('Start Test Execution ')
-        self.checker.start_exec()
-
-    #@abstractmethod
-    # post processing
-    def evaluate(self):
-        self.logger.info('Start Test Evaluation ')
-        self.checker.start_eval()
-
-
-class TestCase1(AbstractTestCase):
-
-    def __init__(self, id, testif=[]):
-        self.testif = testif
-        TestCaseName = 'TestCase1'
-        super().__init__(TestCaseName, id)
-
-    def execute(self):
-        self.checker.check('is_equal', 2, 2, 'test if is equal')
-        self.checker.check('is_equal', 2, 3, 'test if is equal')
-        self.data_logger.add_data('measurement1', 'x', [1, 2, 3, 4, 5, 6, 7])
-
-    def evaluate(self):
-        pass
 
 class DataLogger(object):
 
@@ -229,9 +162,6 @@ def main():
     checker.check('is_equal', 2, 3, 'test if is equal')
     checker.print_summary()
     checker.print_log()
-
-    tc1 = TestCase1()
-    tc1.execute()
 
 
 if __name__ == "__main__":

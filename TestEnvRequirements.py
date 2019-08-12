@@ -1,6 +1,6 @@
 from tinydb import TinyDB, Query, where
 import datetime
-import Checker
+import TestEnvLog
 
 
 class RequirementsManager(object):
@@ -103,9 +103,9 @@ class RequirementsManager(object):
 def main():
 
     # list of test cases
-    c1 = Checker.Checker('c1')
+    c1 = TestEnvLog.Checker('c1')
     c1.purge()
-    c2 = Checker.Checker('c2')
+    c2 = TestEnvLog.Checker('c2')
     c2.purge()
     c1.check('is_equal', 1, 1, 'equal test', ['req_100'])
     c1.check('is_greater', 1, 2, 'is greater test2', ['req_101'])

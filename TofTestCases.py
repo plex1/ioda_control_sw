@@ -1,4 +1,4 @@
-from Checker import AbstractTestCase
+from TestEnvStructure import AbstractTestCase
 from TofControl import TofControl
 from TofProcessing import TofProcessing
 import numpy as np
