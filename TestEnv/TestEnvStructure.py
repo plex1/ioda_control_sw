@@ -1,7 +1,7 @@
 from tinydb import TinyDB, Query, where
 import datetime
-from TestEnvLog import DataLogger
-from TestEnvLog import Checker
+from TestEnv.TestEnvLog import DataLogger
+from TestEnv.TestEnvLog import Checker
 import logging
 
 
@@ -139,6 +139,7 @@ class Unit(object):
         try:
             ctrl = controllers.get_controller_instance(self.name)
             self.set_controller(ctrl) #
+            ctrl.set_sub_units(self.sub_unit)
         except:
             self.set_controller(None)
             print("Warning: Controller for " + self.name + " not found")
@@ -196,6 +197,9 @@ class BaseController(object):
         self.sub_units = sub_units
         self.parameters = parameters
         self.testif = testif
+
+    def set_sub_units(self, sub_units):
+        self.sub_units = sub_units
 
 
 class Controllers(object):
@@ -270,6 +274,98 @@ class Guis(object):
         gv = view()
         gc = ctrl(gv, controller)
         return gc
+
+
+class TestEnvMainControl(object):
+
+    def __init__(self, testif, hierarchy, controllers, testcases, requirements, guis={}):
+        self.testif = testif
+        self.hierarchy = hierarchy
+        self.controllers = controllers
+        self.testcases = testcases
+        self.requirements = requirements
+        self.guis = guis
+        self.id = "id1"
+
+    def set_id(self, id):
+        self.id = id
+
+    # todo give the following parameters: units, recursive, filter_units, filter_testcases, maybe in a different function
+    def run(self, unit='', recursive=True):
+
+        tc_inst = self.get_test_cases_populate(unit, recursive)
+
+        # execute test cases
+        for test_case_inst in tc_inst:
+            # todo add filtering for test case tags
+            print('Executing Test Case ' + test_case_inst['name'] + ' for unit: ' + test_case_inst['unit'])
+            tc = test_case_inst['inst']
+            # todo: test cases classes could also be populated in external function such as in unit.populate
+            tc.execute()
+
+    def analyze(self, unit='', recursive=True):
+
+        tc_inst = self.get_test_cases_populate(unit, recursive)
+
+        # execute test cases
+        for test_case_inst in tc_inst:
+            # todo add filtering for test case tags
+            print('Evaluating Test Case ' + test_case_inst['name'] + ' for unit: ' + test_case_inst['unit'])
+            tc = test_case_inst['inst']
+            # todo: test cases classes could also be populated in external function such as in unit.populate
+            tc.evaluate()
+
+    def get_test_cases_populate(self, unit='', recursive=True):
+
+        # list of test cases
+        if unit == '':
+            selected_test_cases = self.testcases.get_test_cases()
+        else:
+            if recursive:
+                selected_test_cases = self.testcases.get_test_cases_units(self.hierarchy.get_sub_units_incl(unit))
+            else:
+                selected_test_cases = self.testcases.get_test_cases_units([unit])
+
+        # create instance of testcases
+        tc = []
+        for test_case in selected_test_cases:
+            # todo add filtering for tags
+            for test_case_unit in test_case['units']:
+                if unit == '' or (test_case_unit in self.hierarchy.get_sub_units_incl(unit)):
+                    class_name = test_case['name']
+                    p, m = class_name.rsplit('.', 1)
+                    mod = importlib.import_module(p)
+                    testcaseclass = getattr(mod, m)
+                    inst = testcaseclass(self.id, test_case_unit, self.testif,
+                                         self.controllers.get_controller_instance(test_case_unit))
+                    tc.append({'name': test_case['name'], 'unit': test_case_unit, 'inst': inst})
+
+        return tc
+
+    def gen_setup(self, hierarchy, controllers, testif, guis={}, top_unit='ioda'):
+        ioda_setup = Unit(top_unit, testif)
+        ioda_setup.populate(hierarchy, controllers, guis)
+        return ioda_setup
+
+    def control(self):
+        ioda_setup = self.gen_setup(self.hierarchy, self.controllers, self.testif, self.guis)
+        print('Read: ID=' + hex(ioda_setup.sub_unit['toffpga'].ctrl.registers.reg['id'].read()))
+        return ioda_setup
+
+    def collect_results(self):
+
+        rm = self.requirements
+
+        # get all testcases
+        tc_inst = self.get_test_cases_populate()
+
+        # collect checkers
+        for test_case_inst in tc_inst:
+            rm.add_checker(test_case_inst['inst'].checker)
+
+        rm.collect_checks()
+        rm.check_requirements()
+        rm.print_results()
 
 
 

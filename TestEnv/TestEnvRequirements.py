@@ -1,6 +1,6 @@
-from tinydb import TinyDB, Query, where
+from tinydb import TinyDB, Query
 import datetime
-import TestEnvLog
+from TestEnv import TestEnvLog
 
 
 class RequirementsManager(object):

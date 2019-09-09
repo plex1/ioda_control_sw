@@ -3,7 +3,7 @@ from TofProcessing import HistogramProcessing
 from TofProcessing import TofProcessing
 import numpy as np
 
-from TestEnvStructure import BaseController
+from TestEnv.TestEnvStructure import BaseController
 from Gepin import BaseGepinRegisters
 from csr_tofperipheral_manual import csr_tofperipheral
 

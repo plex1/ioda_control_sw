@@ -1,15 +1,13 @@
 
 from GepinPhySerial import GepinPhySerial
 from Gepin import GepinMaster
-import collections
-from TestEnvStructure import AbstractTestCase
-from TestEnvRequirements import RequirementsManager
-from TestEnvStructure import TestCases
-from TestEnvStructure import UnitHierarchy
-from TestEnvStructure import Unit
-from TestEnvStructure import Controllers
-from TestEnvStructure import Guis
-import TofTestCases
+from TestEnv.TestEnvStructure import AbstractTestCase
+from TestEnv.TestEnvRequirements import RequirementsManager
+from TestEnv.TestEnvStructure import TestCases
+from TestEnv.TestEnvStructure import UnitHierarchy
+from TestEnv.TestEnvStructure import Controllers
+from TestEnv.TestEnvStructure import Guis
+from TestEnv.TestEnvStructure import TestEnvMainControl
 
 # Define the project setup -------------------------------------------------------------
 
@@ -57,93 +55,6 @@ def create_testif():
 
 # End Define the project setup ---------------------------------------------------------
 
-# todo mode Main control to TestEnv file
-class TestEnvMainControl(object):
-
-    def __init__(self, testif, hierarchy, controllers, testcases, requirements, guis={}):
-        self.testif = testif
-        self.hierarchy = hierarchy
-        self.controllers = controllers
-        self.testcases = testcases
-        self.requirements = requirements
-        self.guis = guis
-        self.id = "id1"
-
-    def set_id(self, id):
-        self.id = id
-
-    # todo give the following parameters: units, recursive, filter_units, filter_testcases, maybe in a different function
-    def run(self, unit='', recursive=True):
-
-        # create test interfaces for tester
-        testif = self.testif
-
-        # list of test cases
-        if unit == '':
-            test_cases = self.testcases.get_test_cases()
-        else:
-            if recursive:
-                test_cases = self.testcases.get_test_cases_units(self.hierarchy.get_sub_units_incl(unit))
-            else:
-                test_cases = self.testcases.get_test_cases_units([unit])
-
-        # execute test cases
-        for test_case in test_cases:
-            # todo add filtering for test case tags
-            print('Running Test Case: ' + test_case['name'])
-            for test_case_unit in test_case['units']:
-                if unit == '' or unit == unit:
-                    tc = eval(test_case['name'])(self.id, test_case_unit, self.testif,
-                                                 self.controllers.get_controller_instance(test_case_unit)) #todo: sub units instances from setup
-                    # todo: test cases classes could also be populated in external function such as in unit.populate
-                    tc.execute()
-
-    def analyze(self, unit = '', recursive=True):
-
-        # list of test cases
-        if unit == '':
-            test_cases = self.testcases.get_test_cases()
-        else:
-            if recursive:
-                test_cases = self.testcases.get_test_cases_units(self.hierarchy.get_sub_units_incl(unit))
-            else:
-                test_cases = self.testcases.get_test_cases_units([unit])
-
-
-        # evaluate test cases
-        for test_case in test_cases:
-            # todo add filtering for tags
-            print('Running Test Case: ' + test_case['name'])
-            for test_case_unit in test_case['units']:
-                if unit == '' or unit == unit:
-                    tc = eval(test_case['name'])(self.id, test_case_unit)
-                    # todo: test cases classes could also be populated in external function such as in unit.populate
-                    tc.evaluate()
-
-    def gen_setup(self, hierarchy, controllers, testif, guis={}, top_unit = 'ioda',):
-        ioda_setup = Unit(top_unit, testif)
-        ioda_setup.populate(hierarchy, controllers, guis)
-        return ioda_setup
-
-    def control(self):
-        ioda_setup = self.gen_setup(self.hierarchy, self.controllers, self.testif, self.guis)
-        print('Read: ID=' + hex(ioda_setup.sub_unit['toffpga'].ctrl.registers.reg['id'].read()))
-        return ioda_setup
-
-    def collect_results(self):
-
-        # list of test cases
-        test_cases = self.testcases
-        rm = self.requirements
-
-        # collect checkers
-        for name in test_cases:
-            tc = test_cases[name](self.id)
-            rm.add_checker(tc.checker)
-
-        rm.collect_checks()
-        rm.check_requirements()
-        rm.print_results()
 
 def main():
 
@@ -170,11 +81,8 @@ def main():
         ioda_setup = main_controller.control()
         ioda_setup.sub_unit['toffpga'].gui.run_gui()
 
-    #todo: most imporant todos:
-    #todo: get all testcases as instances (used 3 times in run, analyze and collect results), collect results doesn't work at the moment
-    #todo: add sub_units to controllers
     #todo: execute test cases in the order as defined
-    #todo: put TestEnvMainControl in separate file
+
 
 if __name__ == "__main__":
 

@@ -1,4 +1,4 @@
-from TestEnvStructure import AbstractTestCase
+from TestEnv.TestEnvStructure import AbstractTestCase
 from TofControl import TofControl
 from TofProcessing import TofProcessing
 import numpy as np
@@ -124,7 +124,8 @@ class TestCaseMeasure(AbstractTestCase):
         slot_select = 6
         registers.histogramFilter.write(2 ** 16 + slot_select)
 
-        delay_set = range(10, 141, 1)
+        delta = 20
+        delay_set = range(10, 141, delta)
         delay_tmeas = []
 
         for delay in delay_set:
