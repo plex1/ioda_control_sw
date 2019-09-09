@@ -1,7 +1,8 @@
 
 #gepin general purpose interconnect
 
-import GepinPhySerial
+from Gepin import GepinPhySerial
+
 
 class GepinFrame(object):
 
@@ -127,7 +128,7 @@ class GepinMaster(object):
         return dh.get('nack') == 0
 
 
-from registers import Registers
+from Gepin.Registers import Registers
 
 class BaseGepinRegisters(object):
     def __init__(self, csr_def, testif, parameters={}):

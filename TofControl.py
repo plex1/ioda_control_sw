@@ -4,8 +4,8 @@ from TofProcessing import TofProcessing
 import numpy as np
 
 from TestEnv.TestEnvStructure import BaseController
-from Gepin import BaseGepinRegisters
-from csr_tofperipheral_manual import csr_tofperipheral
+from Gepin.Gepin import BaseGepinRegisters
+from csr.csr_tofperipheral_manual import csr_tofperipheral
 
 
 class TofControl(BaseController, BaseGepinRegisters):

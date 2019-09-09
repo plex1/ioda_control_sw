@@ -1,4 +1,4 @@
-from GuiView import GuiView
+from gui.GuiView import GuiView
 from TofControl import TofControl
 
 

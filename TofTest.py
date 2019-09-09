@@ -1,6 +1,6 @@
 
-from GepinPhySerial import GepinPhySerial
-from Gepin import GepinMaster
+from Gepin.GepinPhySerial import GepinPhySerial
+from Gepin.Gepin import GepinMaster
 from TestEnv.TestEnvStructure import AbstractTestCase
 from TestEnv.TestEnvRequirements import RequirementsManager
 from TestEnv.TestEnvStructure import TestCases
@@ -31,7 +31,7 @@ def list_controllers():
 def list_guis():
     # list of test cases
     guis = Guis()
-    guis.add_gui('toffpga', 'GuiCtrl.GuiCtrl', 'GuiView.GuiView')
+    guis.add_gui('toffpga', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
 
     return guis
 

@@ -1,6 +1,6 @@
 
-from GepinPhySerial import GepinPhySerial
-from Gepin import GepinMaster
+from Gepin.GepinPhySerial import GepinPhySerial
+from Gepin.Gepin import GepinMaster
 
 import time
 import numpy as np
