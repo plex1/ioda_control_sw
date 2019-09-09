@@ -14,8 +14,9 @@ class TestCaseID(AbstractTestCase):
 
     def execute(self):
         AbstractTestCase.execute(self)
-        reg = self.testif['registers'].reg
-        self.checker.check('is_equal', reg['id'].read(), 0x1a, 'Read out ID')
+        tofc = TofControl(self.testif)
+        registers = tofc.registers
+        self.checker.check('is_equal', registers.reg['id'].read(), 0x1a, 'Read out ID')
 
     def evaluate(self):
         AbstractTestCase.evaluate(self)
@@ -107,12 +108,12 @@ class TestCaseMeasure(AbstractTestCase):
 
     def execute(self):
         AbstractTestCase.execute(self)
-        registers = self.testif['registers']
 
         variable_slot = True
 
         # init tofcontrol
         tofc = TofControl(self.testif)
+        registers = tofc.registers
         tofc.init()
         tofc.cal_time = 1
         tofc.calibrate()

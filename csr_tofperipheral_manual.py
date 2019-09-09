@@ -6,6 +6,7 @@ class csr_tofperipheral():
         reg = []  # create empty list
         reg.append(addr)
         reg.append(name)
+        reg.append(descr)
         return reg
 
     def get_reg_list(self):

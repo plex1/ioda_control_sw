@@ -3,31 +3,24 @@ from TofProcessing import HistogramProcessing
 from TofProcessing import TofProcessing
 import numpy as np
 
+from TestEnvStructure import BaseController
+from Gepin import BaseGepinRegisters
 from csr_tofperipheral_manual import csr_tofperipheral
-from registers import Registers
 
 
-class TofControl(object):
+class TofControl(BaseController, BaseGepinRegisters):
 
-    def __init__(self, testif, sub_units = [], parameters={}): # todo abstract class for controllers with this constructor
+    def __init__(self, testif, sub_units = [], parameters={}):
+
+        BaseController.__init__(self, testif, sub_units, parameters)
+        csr_def = csr_tofperipheral()
+        BaseGepinRegisters.__init__(self, csr_def, testif, parameters)
 
         self.debug = 0
         self.cal_time = 0.5
         self.n_taps = 100
         self.clock_period = 25  # 25ns 40MHz clock
-        self.sub_units = sub_units
-        self.parameters = parameters
 
-
-        # init registers
-        test_csri = csr_tofperipheral()
-        registers = Registers(testif['gepin'])
-        if self.parameters.has_key('gepin_offset'):
-            registers.offset = parameters['gepin_offset']
-        else:
-            registers.offset = 0xF0030000
-        registers.populate(test_csri)
-        self.tofregs = registers
 
     def modes(self, modename):
         modedef = {'reset': 0, 'record': 1, 'resetaddr': 3, 'read': 2}
@@ -37,13 +30,13 @@ class TofControl(object):
         pass
 
     def set_delay(self, delay):
-        self.tofregs.delay.write(delay)
+        self.registers.delay.write(delay)
 
     def get_delay(self):
-        return self.tofregs.delay.read()
+        return self.registers.delay.read()
 
     def set_mode(self, mode):
-        self.tofregs.histMode.write(mode)
+        self.registers.histMode.write(mode)
 
     def get_histogram(self, n_taps, period=0.5):
         self.set_mode(self.modes("reset"))
@@ -51,22 +44,22 @@ class TofControl(object):
         time.sleep(period)  # time to acquire data
         self.set_mode(self.modes("resetaddr"))
         self.set_mode(self.modes("read"))
-        self.tofregs.histValues.read()
-        self.tofregs.histValues.read()
-        values = self.tofregs.histValues.read_fifo(n_taps)
+        self.registers.histValues.read()
+        self.registers.histValues.read()
+        values = self.registers.histValues.read_fifo(n_taps)
         return values
 
     def get_calibration_histograms(self, n_taps):
-        self.tofregs.reg['trigTestPeriod'].write(20)
+        self.registers.reg['trigTestPeriod'].write(20)
 
         # calibrate
-        self.tofregs.histogramFilter.write(0)  # filter off
+        self.registers.histogramFilter.write(0)  # filter off
 
-        self.tofregs.reg['ringOscSetting'].write(4)  # set to internal Oscillator
+        self.registers.reg['ringOscSetting'].write(4)  # set to internal Oscillator
         values = self.get_histogram(n_taps, self.cal_time)
         hist_rand = HistogramProcessing(values)
 
-        self.tofregs.reg['ringOscSetting'].write(0)  # set to external input
+        self.registers.reg['ringOscSetting'].write(0)  # set to external input
         self.set_delay(20)
         values = self.get_histogram(n_taps, self.cal_time)
         hist_pulse = HistogramProcessing(values)
@@ -87,7 +80,7 @@ class TofControl(object):
     def verify_calibration(self, dt_per_bin):
         n_taps = len(dt_per_bin)
         # verify calibration
-        self.tofregs.reg['ringOscSetting'].write(4)  # set to internal Oscillator
+        self.registers.reg['ringOscSetting'].write(4)  # set to internal Oscillator
         values = self.get_histogram(n_taps, self.cal_time)
         corrected_distribution = np.array(values) / np.array(dt_per_bin)
         cd_norm = corrected_distribution / np.mean(corrected_distribution)
@@ -97,9 +90,9 @@ class TofControl(object):
     def verify_calibartion_period(self, tofp, clock_period):
         n_taps = len(tofp.dt_per_bin)
         # settings for time read
-        self.tofregs.reg['trigTestPeriod'].write(20)
-        self.tofregs.ringOscSetting.write(0)  # set to external input
-        self.tofregs.histogramFilter.write(0)  # no slot select
+        self.registers.reg['trigTestPeriod'].write(20)
+        self.registers.ringOscSetting.write(0)  # set to external input
+        self.registers.histogramFilter.write(0)  # no slot select
 
         step_size = 10
         delay_set = range(0, 151, step_size)
@@ -135,9 +128,9 @@ class TofControl(object):
 
     def measure_delay_tofp(self, tofp, n_taps):
 
-        slot_select = self.tofregs.reg['averageFilter'].read()
+        slot_select = self.registers.reg['averageFilter'].read()
         slot_select = int(slot_select+1)
-        self.tofregs.reg['histogramFilter'].write(2 ** 16 + slot_select)
+        self.registers.reg['histogramFilter'].write(2 ** 16 + slot_select)
 
         hp = HistogramProcessing()
         values = self.get_histogram(n_taps, 1)

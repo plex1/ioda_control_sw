@@ -22,10 +22,12 @@ class RequirementsManager(object):
     def purge(self):
         self.db.purge_tables()
 
-    def add_requirement(self, id, description):
+    def add_requirement(self, id, description, unit='', tags=[]):
         self.db.insert({'id': id,
                         'description' : description,
                         'time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
+                        'unit': unit,
+                        'tags': tags
                         })
 
     def compliance_purge(self):

@@ -124,6 +124,23 @@ class GepinMaster(object):
         if dh.get('nack') == 1:
             print("nack received")
         dh['addr'] = dh.get('addr') - self.offset
+        return dh.get('nack') == 0
+
+
+from registers import Registers
+
+class BaseGepinRegisters(object):
+    def __init__(self, csr_def, testif, parameters={}):
+
+        # init registers
+        registers = Registers(testif['gepin'])
+        if 'gepin_offset' in self.parameters:
+            registers.offset = parameters['gepin_offset']
+        else:
+            registers.offset = 0xF0030000
+        registers.populate(csr_def)
+        self.registers = registers
+
 
 
 

@@ -15,7 +15,11 @@ from serial import Serial
 class GepinPhySerial(object):
 
     def __init__(self, port, baudrate=9600):
-        self.ser = Serial(port, baudrate=baudrate)  # open serial port
+        try:
+            self.ser = Serial(port, baudrate=baudrate)  # open serial port
+        except:
+            self.ser = None
+            print("Error: Could not connect to interface")
         self.debug = 0
         if self.debug > 0:
             print("GepinSerial created" + self.ser.name)  # check which port was really used

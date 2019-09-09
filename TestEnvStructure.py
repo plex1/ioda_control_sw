@@ -5,6 +5,37 @@ from TestEnvLog import Checker
 import logging
 
 
+# todo: tags could have key and value (and type: boolean, integer)
+
+# can be used to filter test cases or
+# todo: can be used to filter units
+class TestEnvFilter(object):
+
+    def __init__(self, tags, filter_type='out'):
+        self.tags = tags
+        self.filter_type = filter_type
+
+
+def testenv_filter(list_in, testenv_filter):
+    list_out = []
+    for elem in list_in:
+            elem_istagged = False
+            for tag in elem['tags']:
+                if tag in testenv_filter.tags:
+                    elem_istagged = True
+            if (testenv_filter.filter_type == 'keep' and elem_istagged) or \
+                    (testenv_filter.filter_type == 'out' and not elem_istagged):
+                list_out.append(elem)
+    return list_out
+
+
+def testenv_to_names(list_in):
+    list_out = []
+    for elem in list_in:
+        list_out.append(elem['name'])
+    return list_out
+
+
 class AbstractTestCase(object):
 
     def __init__(self, TestCaseName, id='', unit_name=''):
@@ -71,7 +102,6 @@ class TestCases(object):
                         })
 
     def get_test_cases(self):
-        test_case_list = []
         return self.db.all()
 
     def get_test_cases_units(self, unit_list):
@@ -86,6 +116,7 @@ class Unit(object):
 
     def __init__(self, name, testif):
         self.ctrl = None
+        self.gui = None
         self.sub_unit={}
         self.name = name
         self.testif = testif
@@ -93,21 +124,32 @@ class Unit(object):
     def set_controller(self, ctrl):
         self.ctrl = ctrl
 
+    def set_gui(self, gui):
+        self.gui = gui
+
     def add_sub_unit(self, name):
         self.sub_unit[name] = Unit(name, self.testif)
 
-    def populate(self, unit_hierarchy, controllers):
+    def populate(self, unit_hierarchy, controllers, guis = {}):
 
         for su in unit_hierarchy.get_sub_units(self.name, False):
             self.add_sub_unit(su)
-            self.sub_unit[su].populate(unit_hierarchy, controllers)
+            self.sub_unit[su].populate(unit_hierarchy, controllers, guis)
 
         try:
             ctrl = controllers.get_controller_instance(self.name)
-            self.set_controller(ctrl) # todo: instance self.sub_unit could also be passed to controller
+            self.set_controller(ctrl) #
         except:
             self.set_controller(None)
-            print("Controller for" + self.name + " not found")
+            print("Warning: Controller for " + self.name + " not found")
+
+
+        try:
+            gui = guis.get_gui_instance(self.name, ctrl)
+            self.set_gui(gui) # todo: instance self.sub_unit could also be passed to controller
+        except:
+            self.set_gui(None)
+            print("Warning: GUI for " + self.name + " not found")
 
 
 class UnitHierarchy(object):
@@ -149,6 +191,13 @@ class UnitHierarchy(object):
         return [unit_name] + self.get_sub_units(unit_name, recursive)
 
 
+class BaseController(object):
+    def __init__(self, testif, sub_units=[], parameters={}):
+        self.sub_units = sub_units
+        self.parameters = parameters
+        self.testif = testif
+
+
 class Controllers(object):
 
     def __init__(self, prefix='1', purge=True):
@@ -156,8 +205,12 @@ class Controllers(object):
         if purge:
             self.db.purge_tables()
         self.query = Query()
+        self.testif = None
 
-    def add_controller(self, unit_name, controller, parameters={}, tags=[]):
+    def set_testif(self, testif):
+        self.testif = testif
+
+    def add_controller(self, unit_name, controller, parameters={}, tags=[]): #tags = parameters=?
         self.db.insert({'UnitName': unit_name,
                         'Controller' : controller,
                         'Tags' : tags,
@@ -179,7 +232,46 @@ class Controllers(object):
         mod = importlib.import_module(p)
         ctrl = getattr(mod, m)
         parameters = self.get_controller_parameters(unit_name)
-        return ctrl(self.testif, self.sub_unit, parameters)
+        sub_units = None # todo get subunits ????????????????
+        return ctrl(self.testif, sub_units, parameters)
+
+
+class Guis(object):
+
+    def __init__(self, prefix='1', purge=True):
+        self.db = TinyDB('db/' + prefix + '_guis.json')
+        if purge:
+            self.db.purge_tables()
+        self.query = Query()
+
+    def add_gui(self, unit_name, gui_controller, gui_view, tags=[]):
+        self.db.insert({'UnitName': unit_name,
+                        'GuiController' : gui_controller,
+                        'GuiView': gui_view,
+                        'Tags' : tags,
+                        'Time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S")
+                        })
+
+    def get_gui(self, unit_name):
+        unitfound = self.db.search(where('UnitName') == unit_name)[0]
+        return unitfound['GuiView'], unitfound['GuiController']
+
+    def get_gui_instance(self, unit_name, controller):
+        gui_ctrl = self.get_gui(unit_name)[1]
+        p, m = gui_ctrl.rsplit('.', 1)
+        mod = importlib.import_module(p)
+        ctrl = getattr(mod, m)
+
+        gui_view = self.get_gui(unit_name)[0]
+        p, m = gui_view.rsplit('.', 1)
+        mod = importlib.import_module(p)
+        view = getattr(mod, m)
+
+        gv = view()
+        gc = ctrl(gv, controller)
+        return gc
+
+
 
 
 def main():
@@ -197,10 +289,10 @@ def main():
     tch.add_unit('ioda', ['motorcontroller_unit', 'toffpga_unit'])
     tch.add_unit('motorcontroller_unit', ['motorcontrollerpower_unit'])
 
-    print(tc.get_test_cases())
+    print(testenv_to_names(tc.get_test_cases()))
     print(tch.get_sub_units_incl('ioda', True))
-    print(tc.get_test_cases_units(tch.get_sub_units_incl('ioda', False)))
-    print(tc.get_test_cases_units(tch.get_sub_units_incl('ioda')))
+    print(testenv_to_names(tc.get_test_cases_units(tch.get_sub_units_incl('ioda', False))))
+    print(testenv_to_names(tc.get_test_cases_units(tch.get_sub_units_incl('ioda'))))
 
 
 if __name__ == "__main__":
