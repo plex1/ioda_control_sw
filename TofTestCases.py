@@ -99,6 +99,7 @@ class TestCaseCalibrate(AbstractTestCase):
         plt.ylabel('Delay per Tap [ns]')
         plt.savefig('data/' + self.prefix+'_dtperbin.png')
 
+
 class TestCaseMeasure(AbstractTestCase):
 
     def __init__(self, id, unit_name='', testif={}, controller=None):

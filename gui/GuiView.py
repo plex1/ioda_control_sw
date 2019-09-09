@@ -29,32 +29,18 @@ class GuiView(Gtk.Window):
 
         #Creating the ListStore model
         self.parameter_liststore = Gtk.ListStore(str, str, str, str, str)
-        #for parameter_ref in parameter_list:
-         #   self.parameter_liststore.append(list(parameter_ref))
-
 
         #creating the treeview, making it use the filter as a model, and adding the columns
-        self.treeview = Gtk.TreeView(self.parameter_liststore) #new_with_model(self.parameter_liststore)
+        self.treeview = Gtk.TreeView(self.parameter_liststore)
         for i, column_title in enumerate(["R/W", "Address", "Parameter Name", "Value", "Data Type"]):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             self.treeview.append_column(column)
 
-        # #creating buttons to filter by programming language, and setting up their events
-        # self.buttons = list()
-        # for prog_language in ["Java", "C", "C++", "Python", "None"]:
-        #     button = Gtk.Button(prog_language)
-        #     self.buttons.append(button)
-        #     button.connect("clicked", self.on_selection_button_clicked)
-
-
         #setting up the layout, putting the treeview in a scrollwindow, and the buttons in a row
         self.scrollable_treelist = Gtk.ScrolledWindow()
         self.scrollable_treelist.set_vexpand(True)
         self.grid.attach(self.scrollable_treelist, 0, 1, 6, 8)
-            # self.grid.attach_next_to(self.buttons[0], self.scrollable_treelist, Gtk.PositionType.BOTTOM, 1, 1)
-            # for i, button in enumerate(self.buttons[1:]):
-            #     self.grid.attach_next_to(button, self.buttons[i], Gtk.PositionType.RIGHT, 1, 1)
         self.scrollable_treelist.add(self.treeview)
 
 
@@ -71,7 +57,6 @@ class GuiView(Gtk.Window):
             name_store.append([parameter_ref[0], parameter_ref[1]])
 
         name_combo = Gtk.ComboBox.new_with_model_and_entry(name_store)
-        #name_combo.connect("changed", self.on_name_combo_changed)
         name_combo.set_entry_text_column(1)
         hbox.pack_start(name_combo, True, True, 0)
         self.name_combo = name_combo
@@ -93,8 +78,8 @@ class GuiView(Gtk.Window):
         button.connect("clicked", self.on_click_write_param)
         hbox.pack_start(button, True, True, 0)
 
-        button = Gtk.Button.new_with_label("Read All")
-        button.connect("clicked", self.on_click_read_all_param)
+        button = Gtk.Button.new_with_label("Clear")
+        button.connect("clicked", self.on_click_clear_all_param)
         hbox.pack_start(button, True, True, 0)
 
         self.show_all()
@@ -146,7 +131,7 @@ class GuiView(Gtk.Window):
             self.parameter_liststore.insert(0, list(elem))
 
 
-    def on_click_read_all_param(self, button):
+    def on_click_clear_all_param(self, button):
         self.parameter_liststore.clear()
 
     def register_read_param_callback(self, cb):
@@ -163,16 +148,9 @@ class GuiView(Gtk.Window):
 
         self.compose_window()
 
-
-        #win = TreeViewFilterWindow(parameter_list)
         self.connect("destroy", Gtk.main_quit)
         self.show_all()
         Gtk.main()
-
-
-
-
-
 
 def main():
 
@@ -191,25 +169,3 @@ if __name__ == "__main__":
     main()
 
 
-# import gi
-#
-# gi.require_version('Gtk', '3.0')
-# from gi.repository import Gtk
-#
-#
-# class Handler:
-#     def onDestroy(self, *args):
-#         Gtk.main_quit()
-#
-#     def onButtonPressed(self, button):
-#         print("Hello World!")
-#
-#
-# builder = Gtk.Builder()
-# builder.add_from_file("./gui/testerGui.glade")
-# builder.connect_signals(Handler())
-#
-# window = builder.get_object("window1")
-# window.show_all()
-#
-# Gtk.main()

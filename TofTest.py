@@ -58,20 +58,21 @@ def create_testif():
 
 def main():
 
+    # create test TestEnv framework
     testif = create_testif()
     testcases = list_test_cases()
-    requirements = RequirementsManager()
+    requirements = RequirementsManager() # no requirements defined
     hierarchy = create_hierarchy()
     controllers = list_controllers()
     controllers.set_testif(testif)
     guis = list_guis()
-
     id = AbstractTestCase.gen_id()
     #id = '20190802-183801'
 
     main_controller = TestEnvMainControl(testif, hierarchy, controllers, testcases, requirements, guis)
     main_controller.set_id(id)
 
+    # example
     mode = 'gui'
     if mode == 'test':
         main_controller.run()
@@ -82,7 +83,6 @@ def main():
         ioda_setup.sub_unit['toffpga'].gui.run_gui()
 
     #todo: execute test cases in the order as defined
-
 
 if __name__ == "__main__":
 

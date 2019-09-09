@@ -3,6 +3,7 @@ import datetime
 from TestEnv.TestEnvLog import DataLogger
 from TestEnv.TestEnvLog import Checker
 import logging
+import importlib
 
 
 # todo: tags could have key and value (and type: boolean, integer)
@@ -43,7 +44,7 @@ class AbstractTestCase(object):
         prefix = self.time
         if id != '':
             prefix = id
-        prefix = prefix+'_' + unit_name + '+' + TestCaseName
+        prefix = prefix+'_' + unit_name + '_' + TestCaseName
         self.data_logger = DataLogger(prefix)
         self.checker = Checker(prefix)
         self.TestCaseName=TestCaseName
@@ -55,16 +56,11 @@ class AbstractTestCase(object):
         # create file handler which logs even debug messages
         fh = logging.FileHandler('db/' + prefix + '.log')
         fh.setLevel(logging.DEBUG)
-        # create console handler with a higher log level
-        #ch = logging.StreamHandler()
-        #ch.setLevel(logging.DEBUG)
         # create formatter and add it to the handlers
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fh.setFormatter(formatter)
-        #ch.setFormatter(formatter)
         # add the handlers to the logger
         logger.addHandler(fh)
-        #logger.addHandler(ch)
 
         logger.info('creating an instance '+ prefix)
 
@@ -85,6 +81,7 @@ class AbstractTestCase(object):
     def evaluate(self):
         self.logger.info('Start Test Evaluation ')
         self.checker.start_eval()
+
 
 class TestCases(object):
 
@@ -110,7 +107,6 @@ class TestCases(object):
             test_cases += self.db.search(self.query.units.any(str(unit))) #todo: shouldn't work with 'unit_' + unit
         return test_cases
 
-import importlib
 
 class Unit(object):
 
@@ -147,7 +143,7 @@ class Unit(object):
 
         try:
             gui = guis.get_gui_instance(self.name, ctrl)
-            self.set_gui(gui) # todo: instance self.sub_unit could also be passed to controller
+            self.set_gui(gui)
         except:
             self.set_gui(None)
             print("Warning: GUI for " + self.name + " not found")
@@ -157,8 +153,7 @@ class UnitHierarchy(object):
 
     # todo: return unit dictionay, then write a function which can filter for tags and one that returns just a list of names
     # this allows for easy filtering for tags in units and test cases: filterout and filter keep (standard)
-    #
-    # todo: ++++=++++++++++++++++++++++++++++++++++++++++++
+
     def __init__(self, prefix='1', purge=True):
         self.db = TinyDB('db/' + prefix +'_module_hierarchy.json')
         if purge:
@@ -236,7 +231,7 @@ class Controllers(object):
         mod = importlib.import_module(p)
         ctrl = getattr(mod, m)
         parameters = self.get_controller_parameters(unit_name)
-        sub_units = None # todo get subunits ????????????????
+        sub_units = None # sub-units get assigned afterwards
         return ctrl(self.testif, sub_units, parameters)
 
 
@@ -366,8 +361,6 @@ class TestEnvMainControl(object):
         rm.collect_checks()
         rm.check_requirements()
         rm.print_results()
-
-
 
 
 def main():
