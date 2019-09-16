@@ -125,8 +125,8 @@ class TestCaseMeasure(AbstractTestCase):
         slot_select = 6
         registers.histogramFilter.write(2 ** 16 + slot_select)
 
-        delta = 20
-        delay_set = range(10, 141, delta)
+        delta = 1
+        delay_set = range(0, 141, delta)
         delay_tmeas = []
 
         for delay in delay_set:
@@ -145,16 +145,47 @@ class TestCaseMeasure(AbstractTestCase):
     def evaluate(self):
         AbstractTestCase.evaluate(self)
 
+        # post processing
         delay_set = self.data_logger.get_data("delay_set")
         delay_tmeas = self.data_logger.get_data("delay_meas")
+
+        delay_tmeas_rel = np.array(delay_tmeas) - delay_tmeas[0]
+        delay_tmeas_rel = delay_tmeas_rel / delay_tmeas_rel[-1] * delay_set[-1]
+
+        delay_error = delay_tmeas_rel - np.linspace(0.0, delay_set[-1], num=len(delay_tmeas_rel))
+
+        delay_tmeas_diff_rel = np.diff(delay_tmeas_rel)
 
         # plot results
         plt.figure(0)
         plt.clf()
-        plt.plot(np.array(delay_set) * 0.25, delay_tmeas)
+        plt.plot(np.array(delay_set), delay_tmeas)
         plt.grid(True, which="both")
         plt.xlabel('Delay Setting [ns]')
         plt.ylabel('Delay Measured [ns]')
         plt.savefig('data/' + self.prefix+'_measured.png')
 
+        plt.figure(0)
+        plt.clf()
+        plt.plot(np.array(delay_set), delay_tmeas_rel)
+        plt.grid(True, which="both")
+        plt.xlabel('Delay Setting [ns]')
+        plt.ylabel('Delay Measured, offset corrected / gain corrected [ns]')
+        plt.savefig('data/' + self.prefix+'_measured_rel.png')
+
+        plt.figure(0)
+        plt.clf()
+        plt.plot(np.array(delay_set), delay_error*1000, 'x-')
+        plt.grid(True, which="both")
+        plt.xlabel('Delay Setting [ps]')
+        plt.ylabel('Delay Measured Error, offset corrected / gain corrected [ns]')
+        plt.savefig('data/' + self.prefix+'_measured_rel_err.png')
+
+        plt.figure(0)
+        plt.clf()
+        plt.plot(np.array(delay_set[0:-1]), delay_tmeas_diff_rel * 1000, 'x-')
+        plt.grid(True, which="both")
+        plt.xlabel('Delay Setting [ps]')
+        plt.ylabel('Delay Measured Difference, offset corrected / gain corrected [ns]')
+        plt.savefig('data/' + self.prefix + '_measured_rel_diff.png')
 

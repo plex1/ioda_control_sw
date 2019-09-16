@@ -28,6 +28,7 @@ def list_controllers():
 
     return con
 
+
 def list_guis():
     # list of test cases
     guis = Guis()
@@ -44,11 +45,13 @@ def create_hierarchy():
 
 
 def create_testif():
-    # init interface
-    gepin_phy = GepinPhySerial('/dev/ttyUSB0', baudrate=115200)
+
+    # init interface (Gepin: General Purpose Interface)
+    serial_port = '/dev/ttyS0' #'/dev/ttyUSB0'
+    gepin_phy = GepinPhySerial(serial_port, baudrate=115200)
     gepin = GepinMaster(gepin_phy)
 
-    # define test interfaces
+    # list test interfaces
     test_ifs={}
     test_ifs['gepin'] = gepin
     return test_ifs
@@ -66,16 +69,23 @@ def main():
     controllers = list_controllers()
     controllers.set_testif(testif)
     guis = list_guis()
-    id = AbstractTestCase.gen_id()
-    #id = '20190802-183801'
 
+    # test id
+    new = False  # to be adopted by user
+    if new:
+        id = AbstractTestCase.gen_id()
+    else:
+        id = '20190916-134835'
+
+    # create Test Env Main Controller and set id
     main_controller = TestEnvMainControl(testif, hierarchy, controllers, testcases, requirements, guis)
     main_controller.set_id(id)
 
-    # example
-    mode = 'gui'
+    # run test
+    mode = 'test'  # to be adopted by user
     if mode == 'test':
-        main_controller.run()
+        if new:
+            main_controller.run()
         main_controller.analyze()
         main_controller.collect_results()
     if mode == 'gui':

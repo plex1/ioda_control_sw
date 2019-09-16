@@ -16,7 +16,7 @@ class GepinPhySerial(object):
 
     def __init__(self, port, baudrate=9600):
         try:
-            self.ser = Serial(port, baudrate=baudrate)  # open serial port
+            self.ser = Serial(port, baudrate=baudrate, timeout=20.0)  # open serial port
         except:
             self.ser = None
             print("Error: Could not connect to interface")
