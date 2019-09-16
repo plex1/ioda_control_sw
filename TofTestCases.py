@@ -156,6 +156,9 @@ class TestCaseMeasure(AbstractTestCase):
 
         delay_tmeas_diff_rel = np.diff(delay_tmeas_rel)
 
+        self.checker.check('is_smaller_all', np.abs(delay_error).tolist(), 0.35, 'Check error bound')
+        self.checker.write_to_file('data/' + self.prefix + '_logger.dat')
+
         # plot results
         plt.figure(0)
         plt.clf()

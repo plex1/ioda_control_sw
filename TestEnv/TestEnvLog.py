@@ -43,6 +43,7 @@ class DataLogger(object):
     def get_data(self, name):
         return self.db.search(self.query.Name == name)[0]['data']
 
+import numpy as np
 
 class Checker(object):
 
@@ -95,7 +96,13 @@ class Checker(object):
             'is_greater_equal': (lambda actual, expected: actual >= expected),
             'is_bit_set': (lambda actual, expected: (actual>>expected) & 1 == 1),
             'is_bit_cleared': (lambda actual, expected: (actual >> expected) & 1 == 1),
-            'is_bit_equal': (lambda actual, expected: (actual >> expected['offset']) & 1 == expected['value'])
+            'is_bit_equal': (lambda actual, expected: (actual >> expected['offset']) & 1 == expected['value']),
+            'is_equal_all': (lambda actual, expected: actual == expected),
+            'is_smaller_all': (lambda actual, expected: ((np.array(actual) < expected).all()).tolist()),
+            'is_greater_all': (lambda actual, expected: ((np.array(actual) > expected).all()).tolist()),
+            'is_smaller_equal_all': (lambda actual, expected: ((np.array(actual) <= expected).all()).tolist()),
+            'is_greater_equal_all': (lambda actual, expected: ((np.array(actual) >= expected).all()).tolist()),
+
         }
 
         check_ok = eval_checks[check_type](actual, expected)
