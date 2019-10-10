@@ -26,15 +26,21 @@ class GepinPhySerial(object):
 
 
     def write_list(self, wl):
-        if self.debug>0:
-            print("sent bytes: " + str(wl))
-        self.ser.write(bytearray(wl))
+        try:
+            if self.debug>0:
+                print("sent bytes: " + str(wl))
+            self.ser.write(bytearray(wl))
+        except:
+            print("Physerial, Write error")
 
     def read_list(self, len):
-        rl = list(self.ser.read(len))
-        if self.debug > 0:
-            print("received bytes: " + str(rl))
-        return rl
+        try:
+            rl = list(self.ser.read(len))
+            if self.debug > 0:
+                print("received bytes: " + str(rl))
+            return rl
+        except:
+            print("Physerial, read error")
 
     def clear_if(self):
         self.ser.read_all()

@@ -44,8 +44,10 @@ class RequirementsManager(object):
 
     def collect_checks(self):
 
-        st = 'Checker Results:\n'
+        st = '\n--\nChecker Results:\n--\n'
 
+        checkers_total = 0
+        chechers_err = 0
         for checker in self.checkers:
             st += 'TestID          : ' + checker.testid + '\n'
             st += 'Number of checks: ' + str(checker.db_get_num_checks()) + '\n'
@@ -57,7 +59,16 @@ class RequirementsManager(object):
                 st += ', Expected: ' + str(check['Expected']) + '\n'
             st += '--' + '\n'
 
+            #statistics
+            if checker.db_get_num_error_checks() > 0:
+                chechers_err += 1
+            checkers_total += 1
+
         print(st)
+        print("\n--\nTest Case Results:\n--")
+        print("Number of test cases:             " + str(checkers_total))
+        print("Number of test cases with errors: " + str(chechers_err))
+        print("--")
         file = open('db/' + self.prefix + '_checker_results.txt', 'w')
         file.write(st)
         file.close()

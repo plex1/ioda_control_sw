@@ -1,4 +1,4 @@
-#  Register definitions for slave core: SVEC carrier control and status registers
+#  Register definitions
 
 class csr_tofperipheral():
 

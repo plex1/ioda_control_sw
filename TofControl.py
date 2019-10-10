@@ -10,11 +10,11 @@ from csr.csr_tofperipheral_manual import csr_tofperipheral
 
 class TofControl(BaseController, BaseGepinRegisters):
 
-    def __init__(self, testif, sub_units = [], parameters={}):
+    def __init__(self, testif, sub_units=[], parameters={}):
 
         BaseController.__init__(self, testif, sub_units, parameters)
-        csr_def = csr_tofperipheral()
-        BaseGepinRegisters.__init__(self, csr_def, testif, parameters)
+        csr_def = 'csr/TofPeripheral.json' #csr_tofperipheral()
+        BaseGepinRegisters.__init__(self, csr_def, testif['gepin'], parameters)
 
         self.debug = 0
         self.cal_time = 0.5
@@ -30,13 +30,13 @@ class TofControl(BaseController, BaseGepinRegisters):
         pass
 
     def set_delay(self, delay):
-        self.registers.delay.write(delay)
+        self.registers.reg['delay'].write(delay)
 
     def get_delay(self):
-        return self.registers.delay.read()
+        return self.registers.reg['delay'].read()
 
-    def set_mode(self, mode):
-        self.registers.histMode.write(mode)
+    def set_mode(self, hist_mode):
+        self.registers.reg['control'].write(hist_mode) #histmode
 
     def get_histogram(self, n_taps, period=0.5):
         self.set_mode(self.modes("reset"))
@@ -44,16 +44,16 @@ class TofControl(BaseController, BaseGepinRegisters):
         time.sleep(period)  # time to acquire data
         self.set_mode(self.modes("resetaddr"))
         self.set_mode(self.modes("read"))
-        self.registers.histValues.read()
-        self.registers.histValues.read()
-        values = self.registers.histValues.read_fifo(n_taps)
+        self.registers.reg['histValues'].read()
+        self.registers.reg['histValues'].read()
+        values = self.registers.reg['histValues'].read_fifo(n_taps)
         return values
 
     def get_calibration_histograms(self, n_taps):
         self.registers.reg['trigTestPeriod'].write(20)
 
         # calibrate
-        self.registers.histogramFilter.write(0)  # filter off
+        self.registers.reg['histogramFilter'].write(0)  # filter off
 
         self.registers.reg['ringOscSetting'].write(4)  # set to internal Oscillator
         values = self.get_histogram(n_taps, self.cal_time)
@@ -91,8 +91,8 @@ class TofControl(BaseController, BaseGepinRegisters):
         n_taps = len(tofp.dt_per_bin)
         # settings for time read
         self.registers.reg['trigTestPeriod'].write(20)
-        self.registers.ringOscSetting.write(0)  # set to external input
-        self.registers.histogramFilter.write(0)  # no slot select
+        self.registers.reg['ringOscSetting'].write(0)  # set to external input
+        self.registers.reg['histogramFilter'].write(0)  # no slot select
 
         step_size = 10
         delay_set = range(0, 151, step_size)

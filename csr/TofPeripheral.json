@@ -1,0 +1,255 @@
+{
+  "name" : "TofPeripheral",
+  "description" : "Peripheral for measuring time-of-flight with a TDC implemented in FPGA logic",
+  "offset" : 4026728448,
+  "registers" : [ {
+    "address" : 0,
+    "name" : "LED",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 1,
+      "name" : "LED",
+      "description" : "1> switch LED on",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : true
+    }
+  }, {
+    "address" : 8,
+    "name" : "id",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 8,
+      "name" : "id",
+      "description" : "ID of this module (default: 0x1d)",
+      "access" : {
+        "read" : true,
+        "write" : false
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : false
+    }
+  }, {
+    "address" : 12,
+    "name" : "test",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 32,
+      "name" : "test",
+      "description" : "test regiser for read and write",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : true
+    }
+  }, {
+    "address" : 16,
+    "name" : "TofReg",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 32,
+      "name" : "TofReg",
+      "description" : "Delay Line first 32 values",
+      "access" : {
+        "read" : true,
+        "write" : false
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : false
+    }
+  }, {
+    "address" : 24,
+    "name" : "delay",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 8,
+      "name" : "delay",
+      "description" : "delay chip settings",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : true
+    }
+  }, {
+    "address" : 28,
+    "name" : "trigTestPeriod",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 5,
+      "name" : "trigTestPeriod",
+      "description" : "trig test period",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : true
+    }
+  }, {
+    "address" : 36,
+    "name" : "trigPosition",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 7,
+      "name" : "position",
+      "description" : "",
+      "access" : {
+        "read" : true,
+        "write" : false
+      }
+    }, {
+      "bitOffset" : 16,
+      "bitWidth" : 1,
+      "name" : "trigPositionFound",
+      "description" : "1> found, 0> not found",
+      "access" : {
+        "read" : true,
+        "write" : false
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : false
+    }
+  }, {
+    "address" : 40,
+    "name" : "control",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 2,
+      "name" : "histMode",
+      "description" : "0> RESET_MEM , 1> RECORD, 2> READ, 3> RESET_ADD",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    }, {
+      "bitOffset" : 4,
+      "bitWidth" : 1,
+      "name" : "edge",
+      "description" : "0> positive edge 1> negative edge",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : true
+    }
+  }, {
+    "address" : 44,
+    "name" : "histValues",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 32,
+      "name" : "histValues",
+      "description" : "histogram value fifo",
+      "access" : {
+        "read" : true,
+        "write" : false
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : false
+    }
+  }, {
+    "address" : 48,
+    "name" : "ringOscSetting",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 1,
+      "name" : "delaylineA",
+      "description" : "delayline a",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    }, {
+      "bitOffset" : 1,
+      "bitWidth" : 1,
+      "name" : "delaylineB",
+      "description" : "delayline b",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    }, {
+      "bitOffset" : 2,
+      "bitWidth" : 1,
+      "name" : "ringOscSetting",
+      "description" : "ring osc input selection 0> internal ring oscillator, 1> external trig input",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : true
+    }
+  }, {
+    "address" : 52,
+    "name" : "histogramFilter",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 5,
+      "name" : "interestedCout",
+      "description" : "description1",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    }, {
+      "bitOffset" : 16,
+      "bitWidth" : 1,
+      "name" : "filterOn",
+      "description" : "description1",
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : true
+    }
+  }, {
+    "address" : 56,
+    "name" : "averageFilter",
+    "fields" : [ {
+      "bitOffset" : 0,
+      "bitWidth" : 5,
+      "name" : "averageFilter",
+      "description" : "",
+      "access" : {
+        "read" : true,
+        "write" : false
+      }
+    } ],
+    "access" : {
+      "read" : true,
+      "write" : false
+    }
+  } ]
+}

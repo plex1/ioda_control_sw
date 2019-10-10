@@ -40,7 +40,7 @@ def main():
     print(str(mot_to_ae(mot_cord)))
 
 
-    gepin_phy = GepinPhySerial('/dev/ttyUSB0')
+    gepin_phy = GepinPhySerial('/dev/ttyUSB1')
     gepin = GepinMaster(gepin_phy)
 
     #gepin.write(0, [-55,31, 22])
@@ -64,6 +64,7 @@ def main():
         gepin.read(100)
         gepin.read(0)
 
+
     addr_map = {
         "motor1_target_pos": 0,
         "motor2_target_pos": 1,
@@ -73,7 +74,7 @@ def main():
         "motor2_status": 5
     }
 
-    time.sleep(4)
+
 
     for pos in numpy.arange(0.1,1.1, 0.1):
         print("target position=" + str(pos))

@@ -95,20 +95,24 @@ class GepinMaster(object):
         e = self.gepin_frame.encode_frame(command=0, addr=addr+self.offset, length=length, data=[], incr=incr)
         self.phy.write_list(e)
 
-        h = self.phy.read_list(self.n_header*self.n_bw)
-        dh = self.gepin_frame.decode_frame(h)
-        d = []
-        if dh.get('nack') == 0:
-            d = self.phy.read_list(self.n_bw*dh.get('length'))
-        else:
-            print("nack received")
-        df = self.gepin_frame.decode_frame(h+d)
-        if signed:
-            for i in range(len(df['data'])):
-                if (df['data'])[i] >= 2**(self.w_word-1):
-                    (df['data'])[i] -= 2**(self.w_word)-1 # convert to signed
-        df['addr'] = df.get('addr') - self.offset
-        return df.get('data')
+        try:
+            h = self.phy.read_list(self.n_header*self.n_bw)
+            dh = self.gepin_frame.decode_frame(h)
+            d = []
+            if dh.get('nack') == 0:
+                d = self.phy.read_list(self.n_bw*dh.get('length'))
+            else:
+                print("nack received")
+            df = self.gepin_frame.decode_frame(h+d)
+            if signed:
+                for i in range(len(df['data'])):
+                    if (df['data'])[i] >= 2**(self.w_word-1):
+                        (df['data'])[i] -= 2**(self.w_word)-1 # convert to signed
+            df['addr'] = df.get('addr') - self.offset
+            return df.get('data')
+        except:
+            print("Gepin Read error")
+            return [0]
 
     def write(self, addr, data, incr=True):
         if type(data) != list:
@@ -131,15 +135,21 @@ class GepinMaster(object):
 from Gepin.Registers import Registers
 
 class BaseGepinRegisters(object):
-    def __init__(self, csr_def, testif, parameters={}):
+    def __init__(self, csr_def, gepin_if, parameters={}):
 
         # init registers
-        registers = Registers(testif['gepin'])
+        registers = Registers(gepin_if)
         if 'gepin_offset' in self.parameters:
+            registers.use_json_offset = False
             registers.offset = parameters['gepin_offset']
         else:
-            registers.offset = 0xF0030000
-        registers.populate(csr_def)
+            registers.use_json_offset = True
+            registers.offset = 0
+
+        if isinstance(csr_def, str): # json file path
+            registers.populate_json(csr_def)
+        else: # python class
+            registers.populate(csr_def)
         self.registers = registers
 
 

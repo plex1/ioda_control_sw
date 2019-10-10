@@ -12,34 +12,41 @@ import importlib
 # todo: can be used to filter units
 class TestEnvFilter(object):
 
-    def __init__(self, tags, filter_type='out'):
+    def __init__(self, tags=[], units=[], filter_type='remove'):
         self.tags = tags
         self.filter_type = filter_type
+        self.units = units
+
+    def filter_names(self, list_in):
+        list_out = []
+        for elem in list_in:
+            if elem in self.units:
+                if self.filter_type == "keep":
+                    list_out.append(elem)
+            else:
+                if self.filter_type == "remove":
+                    list_out.append(elem)
+        return list_out
+
+    def filter_tags(self, list_in):
+        list_out = []
+        for elem in list_in:
+                elem_is_tagged = False
+                for tag in elem['tags']:
+                    if tag in self.tags:
+                        elem_is_tagged = True
+                if (self.filter_type == 'keep' and elem_is_tagged) or \
+                        (self.filter_type == 'out' and not elem_is_tagged):
+                    list_out.append(elem)
+        return list_out
 
 
-def testenv_filter(list_in, testenv_filter):
-    list_out = []
-    for elem in list_in:
-            elem_istagged = False
-            for tag in elem['tags']:
-                if tag in testenv_filter.tags:
-                    elem_istagged = True
-            if (testenv_filter.filter_type == 'keep' and elem_istagged) or \
-                    (testenv_filter.filter_type == 'out' and not elem_istagged):
-                list_out.append(elem)
-    return list_out
-
-
-def testenv_to_names(list_in):
-    list_out = []
-    for elem in list_in:
-        list_out.append(elem['name'])
-    return list_out
+noFilter = TestEnvFilter([])
 
 
 class AbstractTestCase(object):
 
-    def __init__(self, TestCaseName, id='', unit_name=''):
+    def __init__(self, TestCaseName, id='', unit_name='', controller=None):
         self.time =datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         prefix = self.time
         if id != '':
@@ -49,6 +56,8 @@ class AbstractTestCase(object):
         self.checker = Checker(prefix)
         self.TestCaseName=TestCaseName
         self.prefix = prefix
+        self.id = id
+        self.controller = controller
 
         # create logger with 'spam_application'
         logger = logging.getLogger(prefix)
@@ -126,26 +135,24 @@ class Unit(object):
     def add_sub_unit(self, name):
         self.sub_unit[name] = Unit(name, self.testif)
 
-    def populate(self, unit_hierarchy, controllers, guis = {}):
+    def populate(self, unit_hierarchy, controllers, guis):
 
         for su in unit_hierarchy.get_sub_units(self.name, False):
             self.add_sub_unit(su)
             self.sub_unit[su].populate(unit_hierarchy, controllers, guis)
 
-        try:
-            ctrl = controllers.get_controller_instance(self.name)
-            self.set_controller(ctrl) #
-            ctrl.set_sub_units(self.sub_unit)
-        except:
+
+        ctrl = controllers.get_controller_instance(self.name)
+        self.set_controller(ctrl)
+        if ctrl is None:
             self.set_controller(None)
             print("Warning: Controller for " + self.name + " not found")
+        else:
+            ctrl.set_sub_units(self.sub_unit)
 
-
-        try:
-            gui = guis.get_gui_instance(self.name, ctrl)
-            self.set_gui(gui)
-        except:
-            self.set_gui(None)
+        gui = guis.get_gui_instance(self.name, ctrl)
+        self.set_gui(gui)
+        if gui is None:
             print("Warning: GUI for " + self.name + " not found")
 
 
@@ -218,8 +225,12 @@ class Controllers(object):
                         })
 
     def get_controller(self, unit_name):
-        unitfound = self.db.search(where('UnitName') == unit_name)[0]
-        return unitfound['Controller']
+        result = self.db.search(where('UnitName') == unit_name)
+        if len(result) == 0:
+            return None
+        else:
+            unitfound = result[0]
+            return unitfound['Controller']
 
     def get_controller_parameters(self, unit_name):
         unitfound = self.db.search(where('UnitName') == unit_name)[0]
@@ -227,12 +238,15 @@ class Controllers(object):
 
     def get_controller_instance(self, unit_name):
         ctrl_name = self.get_controller(unit_name)
-        p, m = ctrl_name.rsplit('.', 1)
-        mod = importlib.import_module(p)
-        ctrl = getattr(mod, m)
-        parameters = self.get_controller_parameters(unit_name)
-        sub_units = None # sub-units get assigned afterwards
-        return ctrl(self.testif, sub_units, parameters)
+        if ctrl_name is None:
+            return None
+        else:
+            p, m = ctrl_name.rsplit('.', 1)
+            mod = importlib.import_module(p)
+            ctrl = getattr(mod, m)
+            parameters = self.get_controller_parameters(unit_name)
+            sub_units = None  # sub-units get assigned afterwards
+            return ctrl(self.testif, sub_units, parameters)
 
 
 class Guis(object):
@@ -252,23 +266,32 @@ class Guis(object):
                         })
 
     def get_gui(self, unit_name):
-        unitfound = self.db.search(where('UnitName') == unit_name)[0]
-        return unitfound['GuiView'], unitfound['GuiController']
+        result = self.db.search(where('UnitName') == unit_name)
+        if len(result) == 0:
+            return None
+        else:
+            unitfound = result[0]
+            return unitfound['GuiView'], unitfound['GuiController']
+
 
     def get_gui_instance(self, unit_name, controller):
-        gui_ctrl = self.get_gui(unit_name)[1]
-        p, m = gui_ctrl.rsplit('.', 1)
-        mod = importlib.import_module(p)
-        ctrl = getattr(mod, m)
+        gui = self.get_gui(unit_name)
+        if gui is None:
+            return None
+        else:
+            gui_ctrl = gui[1]
+            p, m = gui_ctrl.rsplit('.', 1)
+            mod = importlib.import_module(p)
+            ctrl = getattr(mod, m)
 
-        gui_view = self.get_gui(unit_name)[0]
-        p, m = gui_view.rsplit('.', 1)
-        mod = importlib.import_module(p)
-        view = getattr(mod, m)
+            gui_view = gui[0]
+            p, m = gui_view.rsplit('.', 1)
+            mod = importlib.import_module(p)
+            view = getattr(mod, m)
 
-        gv = view()
-        gc = ctrl(gv, controller)
-        return gc
+            gv = view()
+            gc = ctrl(gv, controller)
+            return gc
 
 
 class TestEnvMainControl(object):
@@ -286,9 +309,9 @@ class TestEnvMainControl(object):
         self.id = id
 
     # todo give the following parameters: units, recursive, filter_units, filter_testcases, maybe in a different function
-    def run(self, unit='', recursive=True):
+    def run(self, unit='', recursive=True, testenv_filter=noFilter):
 
-        tc_inst = self.get_test_cases_populate(unit, recursive)
+        tc_inst = self.get_test_cases_populate(unit, recursive, testenv_filter)
 
         # execute test cases
         for test_case_inst in tc_inst:
@@ -298,9 +321,9 @@ class TestEnvMainControl(object):
             # todo: test cases classes could also be populated in external function such as in unit.populate
             tc.execute()
 
-    def analyze(self, unit='', recursive=True):
+    def analyze(self, unit='', recursive=True, testenv_filter=noFilter):
 
-        tc_inst = self.get_test_cases_populate(unit, recursive)
+        tc_inst = self.get_test_cases_populate(unit, recursive, testenv_filter)
 
         # execute test cases
         for test_case_inst in tc_inst:
@@ -310,16 +333,17 @@ class TestEnvMainControl(object):
             # todo: test cases classes could also be populated in external function such as in unit.populate
             tc.evaluate()
 
-    def get_test_cases_populate(self, unit='', recursive=True):
+    def get_test_cases_populate(self, unit='', recursive=True, testenv_filter=noFilter):
 
         # list of test cases
         if unit == '':
             selected_test_cases = self.testcases.get_test_cases()
         else:
             if recursive:
-                selected_test_cases = self.testcases.get_test_cases_units(self.hierarchy.get_sub_units_incl(unit))
+                selected_units = self.hierarchy.get_sub_units_incl(unit)
             else:
-                selected_test_cases = self.testcases.get_test_cases_units([unit])
+                selected_units = [unit]
+            selected_test_cases = self.testcases.get_test_cases_units(testenv_filter.filter_names(selected_units))
 
         # create instance of testcases
         tc = []
@@ -344,15 +368,14 @@ class TestEnvMainControl(object):
 
     def control(self):
         ioda_setup = self.gen_setup(self.hierarchy, self.controllers, self.testif, self.guis)
-        print('Read: ID=' + hex(ioda_setup.sub_unit['toffpga'].ctrl.registers.reg['id'].read()))
         return ioda_setup
 
-    def collect_results(self):
+    def collect_results(self, unit='', recursive=True, testenv_filter=noFilter):
 
         rm = self.requirements
 
         # get all testcases
-        tc_inst = self.get_test_cases_populate()
+        tc_inst = self.get_test_cases_populate(unit, recursive, testenv_filter)
 
         # collect checkers
         for test_case_inst in tc_inst:

@@ -1,4 +1,4 @@
-*.json
+db/*.json
 *.png
 *.log
 *.dat
