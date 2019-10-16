@@ -12,31 +12,32 @@ import importlib
 # todo: can be used to filter units
 class TestEnvFilter(object):
 
-    def __init__(self, tags=[], units=[], filter_type='remove'):
-        self.tags = tags
-        self.filter_type = filter_type
+    def __init__(self, tc_tags=[], units=[], unit_filter_type='remove', tc_filter_type='remove'):
+        self.tc_tags = tc_tags
+        self.unit_filter_type = unit_filter_type
+        self.tc_filter_type = tc_filter_type # filter type for tags
         self.units = units
 
-    def filter_names(self, list_in):
+    def filter_unit_names(self, list_in):
         list_out = []
         for elem in list_in:
             if elem in self.units:
-                if self.filter_type == "keep":
+                if self.unit_filter_type == "keep":
                     list_out.append(elem)
             else:
-                if self.filter_type == "remove":
+                if self.unit_filter_type == "remove":
                     list_out.append(elem)
         return list_out
 
-    def filter_tags(self, list_in):
+    def filter_tc_tags(self, list_in):
         list_out = []
         for elem in list_in:
                 elem_is_tagged = False
                 for tag in elem['tags']:
-                    if tag in self.tags:
+                    if tag in self.tc_tags:
                         elem_is_tagged = True
-                if (self.filter_type == 'keep' and elem_is_tagged) or \
-                        (self.filter_type == 'out' and not elem_is_tagged):
+                if (self.tc_filter_type == 'keep' and elem_is_tagged) or \
+                        (self.tc_filter_type == 'remove' and not elem_is_tagged):
                     list_out.append(elem)
         return list_out
 
@@ -99,13 +100,16 @@ class TestCases(object):
         if purge:
             self.db.purge_tables()
         self.query = Query()
+        self.id = 0
 
     def add_test_case(self, name, units, tags=[]):
         self.db.insert({'name': name,
                         'units': units,
                         'tags' : tags,
-                        'Time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S")
+                        'Time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S"),
+                        'id' : self.id
                         })
+        self.id = self.id+1
 
     def get_test_cases(self):
         return self.db.all()
@@ -343,21 +347,25 @@ class TestEnvMainControl(object):
                 selected_units = self.hierarchy.get_sub_units_incl(unit)
             else:
                 selected_units = [unit]
-            selected_test_cases = self.testcases.get_test_cases_units(testenv_filter.filter_names(selected_units))
+            #filter units
+            selected_test_cases = self.testcases.get_test_cases_units(testenv_filter.filter_unit_names(selected_units))
+
+        #todo: filter out tags for units
+        # todo: 1) filter units with tags and names, 2) filter testcases with tags and names
+        #filter out tags for test cases
+        selected_test_cases_tag = testenv_filter.filter_tc_tags(selected_test_cases)
 
         # create instance of testcases
         tc = []
-        for test_case in selected_test_cases:
-            # todo add filtering for tags
+        for test_case in sorted(selected_test_cases_tag, key=lambda item:  item['id']):
             for test_case_unit in test_case['units']:
-                if unit == '' or (test_case_unit in self.hierarchy.get_sub_units_incl(unit)):
-                    class_name = test_case['name']
-                    p, m = class_name.rsplit('.', 1)
-                    mod = importlib.import_module(p)
-                    testcaseclass = getattr(mod, m)
-                    inst = testcaseclass(self.id, test_case_unit, self.testif,
-                                         self.controllers.get_controller_instance(test_case_unit))
-                    tc.append({'name': test_case['name'], 'unit': test_case_unit, 'inst': inst})
+                class_name = test_case['name']
+                p, m = class_name.rsplit('.', 1)
+                mod = importlib.import_module(p)
+                testcaseclass = getattr(mod, m)
+                inst = testcaseclass(self.id, test_case_unit, self.testif,
+                                     self.controllers.get_controller_instance(test_case_unit))
+                tc.append({'name': test_case['name'], 'unit': test_case_unit, 'inst': inst})
 
         return tc
 

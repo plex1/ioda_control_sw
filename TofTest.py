@@ -15,10 +15,10 @@ from TestEnv.TestEnvStructure import TestEnvMainControl
 def list_test_cases():
     # list of test cases
     tc = TestCases()
-    tc.add_test_case('TofTestCases.TestCaseID', ['toffpga'])
+    tc.add_test_case('TofTestCases.TestCaseID', ['toffpga'], ['connection_test'])
     tc.add_test_case('TofTestCases.TestCaseCalibrate', ['toffpga'])
     tc.add_test_case('TofTestCases.TestCaseMeasure', ['toffpga'])
-    tc.add_test_case('MotorTestCases.MotTestCaseID', ['motorcontroller_unit'])
+    tc.add_test_case('MotorTestCases.MotTestCaseID', ['motorcontroller_unit'], ['connection_test'])
     tc.add_test_case('MotorTestCases.MotTestCaseDrive', ['motorcontroller_unit'])
 
     return tc
@@ -96,20 +96,30 @@ def main():
     # run test
     mode = 'test'  # to be adopted by user
     if mode == 'test':
+
         testenv_filter = TestEnvFilter()
-        #testenv_filter.filter_type = 'keep'
-        #testenv_filter.units = ['motorcontroller_unit']
+
+        # filters: to be adapted by user
+        #filter for units
+        testenv_filter.unit_filter_type = 'keep'
+        testenv_filter.units = ['motorcontroller_unit']
+
+        #filter for test case tags
         #testenv_filter.units = ['toffpga']
+        #testenv_filter.tc_filter_type = 'keep'
+        #testenv_filter.tc_tags = ['connection_test']
+
         if new:
             main_controller.run("ioda", True, testenv_filter)
         main_controller.analyze("ioda", True, testenv_filter)
         main_controller.collect_results("ioda", True, testenv_filter)
+
     if mode == 'gui':
+
         ioda_setup = main_controller.control()
         ioda_setup.sub_unit['toffpga'].gui.run_gui()
         #ioda_setup.sub_unit['motorcontroller_unit'].gui.run_gui()
 
-    #todo: execute test cases in the order as defined
 
 if __name__ == "__main__":
 

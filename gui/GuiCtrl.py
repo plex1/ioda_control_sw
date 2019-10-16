@@ -2,7 +2,7 @@ from gui.GuiView import GuiView
 from TofControl import TofControl
 
 
-class GuiCtrl():
+class GuiCtrl:
 
     def __init__(self, gui_view, controller):
         self.controller = controller
@@ -19,14 +19,14 @@ class GuiCtrl():
             return self.controller.registers.reg[param].read()
         except:
             print("warning: register read not successful")
-            return 33
+            return 0
 
     def write_param(self, param, value):
         try:
             return self.controller.registers.reg[param].write(value)
         except:
             print("warning: register write not successful")
-            return 1
+            return 0
 
     def run_gui(self):
         self.gui_view.register_read_param_callback(self.read_param)

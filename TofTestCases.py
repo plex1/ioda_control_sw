@@ -10,12 +10,11 @@ class TestCaseID(AbstractTestCase):
     def __init__(self, id, unit_name='', testif={}, controller=None):
         self.testif = testif
         TestCaseName = 'TestCaseID'
-        super().__init__(TestCaseName, id, unit_name)
+        super().__init__(TestCaseName, id, unit_name, controller)
 
     def execute(self):
         AbstractTestCase.execute(self)
-        tofc = TofControl(self.testif)
-        registers = tofc.registers
+        registers = self.controller.registers
         self.checker.check('is_equal', registers.reg['id'].read(), 0x1a, 'Read out ID')
 
     def evaluate(self):
@@ -28,7 +27,7 @@ class TestCaseCalibrate(AbstractTestCase):
     def __init__(self,id, unit_name='', testif={}, controller=None):
         self.testif = testif
         TestCaseName = 'TestCaseCalibrate'
-        super().__init__(TestCaseName, id, unit_name)
+        super().__init__(TestCaseName, id, unit_name, controller)
 
     def execute(self):
         AbstractTestCase.execute(self)
@@ -37,7 +36,7 @@ class TestCaseCalibrate(AbstractTestCase):
         clock_period = 25  # 25ns 40MHz clock
 
         # init tofcontrol
-        tofc = TofControl(self.testif)
+        tofc = self.controller
         tofc.init()
         tofc.cal_time = 1
 
@@ -105,7 +104,7 @@ class TestCaseMeasure(AbstractTestCase):
     def __init__(self, id, unit_name='', testif={}, controller=None):
         self.testif = testif
         TestCaseName = 'TestCaseMeasure'
-        super().__init__(TestCaseName, id, unit_name)
+        super().__init__(TestCaseName, id, unit_name, controller)
 
     def execute(self):
         AbstractTestCase.execute(self)
@@ -113,7 +112,7 @@ class TestCaseMeasure(AbstractTestCase):
         variable_slot = True
 
         # init tofcontrol
-        tofc = TofControl(self.testif)
+        tofc = self.controller
         registers = tofc.registers
         tofc.init()
         tofc.cal_time = 1
