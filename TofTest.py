@@ -29,6 +29,7 @@ def list_controllers():
     con = Controllers()
     con.add_controller('toffpga', 'TofControl.TofControl', {"gepin_offset": 0xF0030000})
     con.add_controller('motorcontroller_unit', 'MotorControl.MotorControl')
+    con.add_controller('tofpcb', 'TofPCB.TofPcbControl')
 
     return con
 
@@ -38,13 +39,13 @@ def list_guis():
     guis = Guis()
     guis.add_gui('toffpga', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
     guis.add_gui('motorcontroller_unit', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
-
+    guis.add_gui('tofpcb', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
     return guis
 
 
 def create_hierarchy():
     tch = UnitHierarchy()
-    tch.add_unit('ioda', ['motorcontroller_unit', 'toffpga'])
+    tch.add_unit('ioda', ['motorcontroller_unit', 'toffpga', 'tofpcb'])
     tch.add_unit('motorcontroller_unit', ['motorcontrollerpower_unit'])
     return tch
 
@@ -54,17 +55,22 @@ def create_testif():
     gepin_tcp = GepinPhyTcp("192.168.1.105", 9801)
 
     # init interface (Gepin: General Purpose Interface)
-    serial_port = '/dev/ttyS0' #'/dev/ttyUSB0'
-    #gepin_phy = GepinPhySerial(serial_port, baudrate=115200)
+    #serial_port = '/dev/ttyS0'
+    serial_port = '/dev/ttyUSB0'
+    gepin_phy_serial = GepinPhySerial(serial_port, baudrate=9600)
+
     gepin = GepinMaster(gepin_tcp)
 
     gepin_tcp2 = GepinPhyTcp("192.168.1.105", 9802)
     gepin_motor = GepinMaster(gepin_tcp2)
 
+    gepin_tofpcb = GepinMaster(gepin_phy_serial)
+
     # list test interfaces
     test_ifs={}
     test_ifs['gepin'] = gepin
     test_ifs['gepin_motor'] = gepin_motor
+    test_ifs['gepin_tofpcb'] = gepin_tofpcb
     return test_ifs
 
 # End Define the project setup ---------------------------------------------------------
@@ -94,7 +100,7 @@ def main():
     main_controller.set_id(id)
 
     # run test
-    mode = 'test'  # to be adopted by user
+    mode = 'gui'  # to be adopted by user
     if mode == 'test':
 
         testenv_filter = TestEnvFilter()
@@ -117,7 +123,8 @@ def main():
     if mode == 'gui':
 
         ioda_setup = main_controller.control()
-        ioda_setup.sub_unit['toffpga'].gui.run_gui()
+        ioda_setup.sub_unit['tofpcb'].gui.run_gui()
+        #ioda_setup.sub_unit['toffpga'].gui.run_gui()
         #ioda_setup.sub_unit['motorcontroller_unit'].gui.run_gui()
 
 
