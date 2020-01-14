@@ -16,7 +16,8 @@ class GepinPhySerial(object):
 
     def __init__(self, port, baudrate=9600):
         try:
-            self.ser = Serial(port, baudrate=baudrate, timeout=20.0)  # open serial port
+            self.ser = Serial(port, baudrate=baudrate, timeout=5.0)  # open serial port
+            self.clear_if()
         except:
             self.ser = None
             print("Error: Could not connect to interface")
@@ -44,3 +45,6 @@ class GepinPhySerial(object):
 
     def clear_if(self):
         self.ser.read_all()
+
+    def close_if(self):
+        pass

@@ -20,23 +20,44 @@ class TofControl(BaseController, BaseGepinRegisters):
         self.cal_time = 0.5
         self.n_taps = 100
         self.clock_period = 25  # 25ns 40MHz clock
+        self.last_histogram = None
+
+        #self.registers.reg['control'].field['edge'].clear()
 
 
     def modes(self, modename):
         modedef = {'reset': 0, 'record': 1, 'resetaddr': 3, 'read': 2}
         return modedef[modename]
 
+    def enable_trig(self):
+        self.registers.reg['control'].set_bit(6)
+
+    def disable_trig(self):
+        self.registers.reg['control'].clear_bit(6)
+
+    def enable_lockin(self):
+        self.registers.reg['control'].set_bit(7)
+
+    def disable_lockin(self):
+        self.registers.reg['control'].clear_bit(7)
+
     def init(self):
-        pass
+        self.enable_trig()
 
     def set_delay(self, delay):
-        self.registers.reg['delay'].write(delay)
+        delay_inv = 0
+        for i in range(8):
+            if delay & 2**i:
+                delay_inv = delay_inv + 2**(7-i)
+
+        #self.registers.reg['delay'].write(delay)
+        self.registers.reg['delay'].write(delay_inv) # temporary fix, correct fpga mapping
 
     def get_delay(self):
         return self.registers.reg['delay'].read()
 
     def set_mode(self, hist_mode):
-        self.registers.reg['control'].write(hist_mode) #histmode
+         self.registers.reg['control'].field['histMode'].readModifyWrite(hist_mode)
 
     def get_histogram(self, n_taps, period=0.5):
         self.set_mode(self.modes("reset"))
@@ -44,7 +65,7 @@ class TofControl(BaseController, BaseGepinRegisters):
         time.sleep(period)  # time to acquire data
         self.set_mode(self.modes("resetaddr"))
         self.set_mode(self.modes("read"))
-        self.registers.reg['histValues'].read()
+        self.registers.reg['histValues'].read() #remove first 2, why?? todo
         self.registers.reg['histValues'].read()
         values = self.registers.reg['histValues'].read_fifo(n_taps)
         return values
@@ -95,7 +116,7 @@ class TofControl(BaseController, BaseGepinRegisters):
         self.registers.reg['histogramFilter'].write(0)  # no slot select
 
         step_size = 10
-        delay_set = range(0, 151, step_size)
+        delay_set = range(0, 120, step_size)
         period_dev_meas = []
 
         for delay in delay_set:
@@ -126,19 +147,64 @@ class TofControl(BaseController, BaseGepinRegisters):
         time_meas = self.measure_delay_tofp(self.tofp, self.n_taps)
         return time_meas
 
+    def select_slot(self, n):
+        self.registers.reg['histogramFilter'].write(2 ** 16 + n)
+
     def measure_delay_tofp(self, tofp, n_taps):
 
         slot_select = self.registers.reg['averageFilter'].read()
         slot_select = int(slot_select+1)
-        self.registers.reg['histogramFilter'].write(2 ** 16 + slot_select)
+        self.select_slot(slot_select)
 
         hp = HistogramProcessing()
         values = self.get_histogram(n_taps, 1)
+        self.last_histogram = values.copy()
         hp.set_histogram(values)
         hp.prune_keep_group(0)
 
         time_meas = tofp.get_time(hp, slot_select)
         return time_meas
+
+    def get_tofreg_histogram(self, n, rising=True):
+        def get_edge(value, rising=True):
+
+            first = (value & 1)
+
+            prev = first
+            for j in range(1,30):
+
+                current = value & (1 << j)
+
+                if current == prev:
+                    return j
+                    if (j % 2 == 0):
+                        is_rising_edge = bool(current)
+                    if (j % 2 == 1):
+                        is_rising_edge = not bool(current)
+                    if is_rising_edge and rising:
+                        return j
+                    if (not is_rising_edge) and (not rising):
+                        return j
+
+                prev = current
+
+            return None
+        histogram = [0]*32
+        start = 2 #first two toregisters are not considered, see get_histogram
+        b_len = 10000
+        #tofregs =self.registers.reg['tofReg'].read_fifo(b_len)
+        for i in range(0, b_len):
+            tofreg= self.registers.reg['tofReg'].read() #tofregs[i]
+            if tofreg < 0:
+                tofreg += 2 **32 - 1
+            edge = get_edge(tofreg>>2, rising)
+            if edge is not None:
+                #edge = edge -start
+                if edge>0:
+                    histogram[edge] = histogram[edge] +1
+        return histogram
+
+
 
 
 

@@ -19,14 +19,23 @@ class Registers:
         def read(self):
             return (self.interface.read(self.addr)[0] >> self.bit_offset) & (2**self.bit_width-1)
 
+        def readModifyWrite(self, data):
+            val = self.interface.read(self.addr)[0]
+            # clear
+            val = val & ~((2 ** self.bit_width - 1) << self.bit_offset)
+            # modify
+            val = val | ((data & (2 ** self.bit_width - 1)) << self.bit_offset)
+            #write
+            self.interface.write(self.addr, val)
+
         def set_bit(self, index):
             val = self.interface.read(self.addr)[0]
-            val = val | (1 << index)
+            val = val | (1 << (index+self.bit_offset))
             self.interface.write(self.addr, val)
 
         def clear_bit(self, index):
             val = self.interface.read(self.addr)[0]
-            val = val & ~(1 << index)
+            val = val & ~(1 << (index+self.bit_offset))
             self.interface.write(self.addr, val)
 
         def set(self):
@@ -85,6 +94,8 @@ class Registers:
             self.reg[csrlist[i][1]] = self.Register(self.interface, csrlist[i][0] + self.offset, csrlist[i][1])
             setattr(self, csrlist[i][1], self.Register(self.interface, csrlist[i][0] + self.offset, csrlist[i][1]))
 
+        self.name = self.csr_file.get_name()
+
     def populate_json(self, csr_json_file):
 
         self.reg = {}
@@ -102,6 +113,6 @@ class Registers:
                 for field_def in reg_def['fields']:
                     fields = self.reg[reg_def['name']].field
                     fields[field_def['name']] = \
-                        self.Field(self.interface, reg_def['address'], field_def['bitOffset'], field_def['bitWidth'],
+                        self.Field(self.interface, reg_def['address']+ self.offset, field_def['bitOffset'], field_def['bitWidth'],
                                    field_def['name'], field_def['description'], field_def['access']['read'],
                                    field_def['access']['write'])

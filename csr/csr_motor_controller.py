@@ -26,3 +26,7 @@ class csr_motor_controller():
 
 
         return registers
+
+
+    def get_name(self):
+        return "Motor Controller"

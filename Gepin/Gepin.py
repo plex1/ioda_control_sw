@@ -92,6 +92,8 @@ class GepinMaster(object):
 
     def read(self, addr, length=1, incr=True, signed=True):
 
+        self.phy.clear_if()
+
         e = self.gepin_frame.encode_frame(command=0, addr=addr+self.offset, length=length, data=[], incr=incr)
         self.phy.write_list(e)
 
@@ -103,6 +105,7 @@ class GepinMaster(object):
                 d = self.phy.read_list(self.n_bw*dh.get('length'))
             else:
                 print("nack received")
+                print(str(dh))
             df = self.gepin_frame.decode_frame(h+d)
             if signed:
                 for i in range(len(df['data'])):
@@ -115,6 +118,7 @@ class GepinMaster(object):
             return [0]
 
     def write(self, addr, data, incr=True):
+
         if type(data) != list:
             data = [data]
         length=len(data)
@@ -128,6 +132,7 @@ class GepinMaster(object):
         dh = self.gepin_frame.decode_frame(h)
         if dh.get('nack') == 1:
             print("nack received")
+            print(str(dh))
         dh['addr'] = dh.get('addr') - self.offset
         return dh.get('nack') == 0
 

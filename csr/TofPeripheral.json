@@ -2,254 +2,419 @@
   "name" : "TofPeripheral",
   "description" : "Peripheral for measuring time-of-flight with a TDC implemented in FPGA logic",
   "offset" : 4026728448,
-  "registers" : [ {
-    "address" : 0,
-    "name" : "LED",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 1,
-      "name" : "LED",
-      "description" : "1> switch LED on",
+  "registers" : [
+    {
+      "address" : 0,
+      "name" : "led",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 1,
+          "name" : "led1",
+          "description" : "0: LED 1 off\n1: LED 1 on",
+          "comment" : "",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : true
       }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : true
-    }
-  }, {
-    "address" : 8,
-    "name" : "id",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 8,
+    },
+    {
+      "address" : 8,
       "name" : "id",
-      "description" : "ID of this module (default: 0x1d)",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 8,
+          "name" : "id",
+          "description" : "ID of this module (default: 0x1a)",
+          "comment" : "",
+          "access" : {
+            "read" : true,
+            "write" : false
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : false
       }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : false
-    }
-  }, {
-    "address" : 12,
-    "name" : "test",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 32,
+    },
+    {
+      "address" : 12,
       "name" : "test",
-      "description" : "test regiser for read and write",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 32,
+          "name" : "test",
+          "description" : "test regiser for read and write operation",
+          "comment" : "the content of this register is not processed",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : true
       }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : true
-    }
-  }, {
-    "address" : 16,
-    "name" : "TofReg",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 32,
-      "name" : "TofReg",
-      "description" : "Delay Line first 32 values",
+    },
+    {
+      "address" : 16,
+      "name" : "tofReg",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 32,
+          "name" : "tofReg",
+          "description" : "First 32 taps of delay line",
+          "comment" : "LSB is first tap in delayline",
+          "access" : {
+            "read" : true,
+            "write" : false
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : false
       }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : false
-    }
-  }, {
-    "address" : 24,
-    "name" : "delay",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 8,
+    },
+    {
+      "address" : 24,
       "name" : "delay",
-      "description" : "delay chip settings",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 8,
+          "name" : "delay",
+          "description" : "delay chip configuraiton",
+          "comment" : "0-255, Step size is 0.25ns",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : true
       }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : true
-    }
-  }, {
-    "address" : 28,
-    "name" : "trigTestPeriod",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 5,
+    },
+    {
+      "address" : 28,
       "name" : "trigTestPeriod",
-      "description" : "trig test period",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 12,
+          "name" : "trigTestPeriod",
+          "description" : "period of the trigger signal output",
+          "comment" : "0-2**12-1 : step size (LSB) = 25ns",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : true
       }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : true
-    }
-  }, {
-    "address" : 36,
-    "name" : "trigPosition",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 7,
-      "name" : "position",
-      "description" : "",
+    },
+    {
+      "address" : 36,
+      "name" : "trigPosition",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 7,
+          "name" : "position",
+          "description" : "Position of the trigger in the delay line",
+          "comment" : "",
+          "access" : {
+            "read" : true,
+            "write" : false
+          }
+        },
+        {
+          "bitOffset" : 16,
+          "bitWidth" : 1,
+          "name" : "trigPositionFound",
+          "description" : "A trigger has been captured",
+          "comment" : "1: found\n0: not found",
+          "access" : {
+            "read" : true,
+            "write" : false
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : false
       }
-    }, {
-      "bitOffset" : 16,
-      "bitWidth" : 1,
-      "name" : "trigPositionFound",
-      "description" : "1> found, 0> not found",
-      "access" : {
-        "read" : true,
-        "write" : false
-      }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : false
-    }
-  }, {
-    "address" : 40,
-    "name" : "control",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 2,
-      "name" : "histMode",
-      "description" : "0> RESET_MEM , 1> RECORD, 2> READ, 3> RESET_ADD",
+    },
+    {
+      "address" : 40,
+      "name" : "control",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 2,
+          "name" : "histMode",
+          "description" : "histogram mode",
+          "comment" : "0: RESET_MEM\n1: RECORD\n2: READ\n3: RESET_ADD",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        },
+        {
+          "bitOffset" : 4,
+          "bitWidth" : 1,
+          "name" : "edge",
+          "description" : "Set on which edge the trigIn signal is triggered",
+          "comment" : "0: positive edge\n1: negative edge",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        },
+        {
+          "bitOffset" : 6,
+          "bitWidth" : 1,
+          "name" : "trigOn",
+          "description" : "enable trigger output",
+          "comment" : "0: Off\n1: On",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        },
+        {
+          "bitOffset" : 7,
+          "bitWidth" : 1,
+          "name" : "SyncOn",
+          "description" : "enable sync1 and sync2 output",
+          "comment" : "0: Off\n1: On",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : true
       }
-    }, {
-      "bitOffset" : 4,
-      "bitWidth" : 1,
-      "name" : "edge",
-      "description" : "0> positive edge 1> negative edge",
-      "access" : {
-        "read" : true,
-        "write" : true
-      }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : true
-    }
-  }, {
-    "address" : 44,
-    "name" : "histValues",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 32,
+    },
+    {
+      "address" : 44,
       "name" : "histValues",
-      "description" : "histogram value fifo",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 32,
+          "name" : "histValues",
+          "description" : "fifo to read histogram value",
+          "comment" : "",
+          "access" : {
+            "read" : true,
+            "write" : false
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : false
       }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : false
-    }
-  }, {
-    "address" : 48,
-    "name" : "ringOscSetting",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 1,
-      "name" : "delaylineA",
-      "description" : "delayline a",
-      "access" : {
-        "read" : true,
-        "write" : true
-      }
-    }, {
-      "bitOffset" : 1,
-      "bitWidth" : 1,
-      "name" : "delaylineB",
-      "description" : "delayline b",
-      "access" : {
-        "read" : true,
-        "write" : true
-      }
-    }, {
-      "bitOffset" : 2,
-      "bitWidth" : 1,
+    },
+    {
+      "address" : 48,
       "name" : "ringOscSetting",
-      "description" : "ring osc input selection 0> internal ring oscillator, 1> external trig input",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 1,
+          "name" : "delaylineA",
+          "description" : "delayline a parameter, keep 0",
+          "comment" : "",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        },
+        {
+          "bitOffset" : 1,
+          "bitWidth" : 1,
+          "name" : "delaylineB",
+          "description" : "delayline b parameter, keep 0",
+          "comment" : "",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        },
+        {
+          "bitOffset" : 2,
+          "bitWidth" : 1,
+          "name" : "ringOscSetting",
+          "description" : "delay line input selection",
+          "comment" : "0: from internal ring oscillator\n 1: from external trig input",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : true
       }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : true
-    }
-  }, {
-    "address" : 52,
-    "name" : "histogramFilter",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 5,
-      "name" : "interestedCout",
-      "description" : "description1",
+    },
+    {
+      "address" : 52,
+      "name" : "histogramFilter",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 12,
+          "name" : "interestedCout",
+          "description" : "Select which slot should be gated\nNumber of 25ns periods after the trigger output\n only enabled if filterOn=1",
+          "comment" : "",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        },
+        {
+          "bitOffset" : 16,
+          "bitWidth" : 1,
+          "name" : "filterOn",
+          "description" : "gating active (see interestedCout)",
+          "comment" : "",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : true
       }
-    }, {
-      "bitOffset" : 16,
-      "bitWidth" : 1,
-      "name" : "filterOn",
-      "description" : "description1",
-      "access" : {
-        "read" : true,
-        "write" : true
-      }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : true
-    }
-  }, {
-    "address" : 56,
-    "name" : "averageFilter",
-    "fields" : [ {
-      "bitOffset" : 0,
-      "bitWidth" : 5,
+    },
+    {
+      "address" : 56,
       "name" : "averageFilter",
-      "description" : "",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 12,
+          "name" : "averageFilter",
+          "description" : "Slot position of the received trigger signal (averaged)",
+          "comment" : "",
+          "access" : {
+            "read" : true,
+            "write" : false
+          }
+        }
+      ],
       "access" : {
         "read" : true,
         "write" : false
       }
-    } ],
-    "access" : {
-      "read" : true,
-      "write" : false
+    },
+    {
+      "address" : 64,
+      "name" : "lockin_sync1_start",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 12,
+          "name" : "lockin_sync1_start",
+          "description" : "start position of Sync1",
+          "comment" : "0-2**12-1  : step size (LSB) = 25ns",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    },
+    {
+      "address" : 68,
+      "name" : "lockin_sync1_end",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 12,
+          "name" : "lockin_sync1_end",
+          "description" : "end position of Sync1",
+          "comment" : "0-2**12-1  : step size (LSB) = 25ns",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    },
+    {
+      "address" : 72,
+      "name" : "lockin_sync2_start",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 12,
+          "name" : "lockin_sync2_start",
+          "description" : "start position of Sync2",
+          "comment" : "0-2**12-1  : step size (LSB) = 25ns",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    },
+    {
+      "address" : 76,
+      "name" : "lockin_sync2_end",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 12,
+          "name" : "lockin_sync2_end",
+          "description" : "end position of Sync2",
+          "comment" : "0-2**12-1  : step size (LSB) = 25ns",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
     }
-  } ]
+  ]
 }

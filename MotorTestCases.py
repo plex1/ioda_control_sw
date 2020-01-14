@@ -7,7 +7,7 @@ import time
 
 class MotTestCaseID(AbstractTestCase):
 
-    def __init__(self, id, unit_name='', testif={}, controller=None):
+    def __init__(self, id, unit_name='', testif={}, controller=None, setup=None):
         self.testif = testif
         TestCaseName = 'MotTestCaseID'
         super().__init__(TestCaseName, id, unit_name, controller)
@@ -24,7 +24,7 @@ class MotTestCaseID(AbstractTestCase):
 
 class MotTestCaseDrive(AbstractTestCase):
 
-    def __init__(self,id, unit_name='', testif={}, controller=None):
+    def __init__(self,id, unit_name='', testif={}, controller=None, setup=None):
         self.testif = testif
         TestCaseName = 'MotTestCaseDrive'
         super().__init__(TestCaseName, id, unit_name, controller)

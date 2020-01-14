@@ -47,7 +47,7 @@ noFilter = TestEnvFilter([])
 
 class AbstractTestCase(object):
 
-    def __init__(self, TestCaseName, id='', unit_name='', controller=None):
+    def __init__(self, TestCaseName, id='', unit_name='', controller=None, setup = None):
         self.time =datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         prefix = self.time
         if id != '':
@@ -59,6 +59,7 @@ class AbstractTestCase(object):
         self.prefix = prefix
         self.id = id
         self.controller = controller
+        self.setup = setup
 
         # create logger with 'spam_application'
         logger = logging.getLogger(prefix)
@@ -150,14 +151,15 @@ class Unit(object):
         self.set_controller(ctrl)
         if ctrl is None:
             self.set_controller(None)
-            print("Warning: Controller for " + self.name + " not found")
+            #print("Warning: Controller for " + self.name + " not found")
         else:
             ctrl.set_sub_units(self.sub_unit)
 
         gui = guis.get_gui_instance(self.name, ctrl)
         self.set_gui(gui)
         if gui is None:
-            print("Warning: GUI for " + self.name + " not found")
+            pass
+            #print("Warning: GUI for " + self.name + " not found")
 
 
 class UnitHierarchy(object):
@@ -363,8 +365,11 @@ class TestEnvMainControl(object):
                 p, m = class_name.rsplit('.', 1)
                 mod = importlib.import_module(p)
                 testcaseclass = getattr(mod, m)
+                top_unit = test_case_unit
+                setup = self.gen_setup(self.hierarchy, self.controllers, self.testif, self.guis, top_unit)
                 inst = testcaseclass(self.id, test_case_unit, self.testif,
-                                     self.controllers.get_controller_instance(test_case_unit))
+                                     self.controllers.get_controller_instance(test_case_unit), setup)
+
                 tc.append({'name': test_case['name'], 'unit': test_case_unit, 'inst': inst})
 
         return tc

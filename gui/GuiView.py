@@ -10,6 +10,10 @@ class GuiView(Gtk.Window):
         self.parameter_list = None
         self.read_param_callback = None
         self.write_param_callback = None
+        self.label_module_name = None
+
+    def set_module_name(self, name="-"):
+        self.label_module_name.set_text("Test Env GUI for Module: \n"+ name)
 
     def compose_window(self):
 
@@ -23,7 +27,8 @@ class GuiView(Gtk.Window):
         self.add(self.grid)
 
         label = Gtk.Label()
-        label.set_text("Test Env GUI for Module: \n -")
+        self.label_module_name = label
+        self.set_module_name()
         label.set_justify(Gtk.Justification.LEFT)
         self.grid.attach(label, 0, 0, 1, 1)
 
@@ -144,12 +149,16 @@ class GuiView(Gtk.Window):
         self.parameter_list = parameter_list
 
 
-    def run_gui(self):
+    def run_gui(self, name):
 
         self.compose_window()
-
+        self.set_module_name(name)
         self.connect("destroy", Gtk.main_quit)
         self.show_all()
+
+        #Gtk.main()
+
+    def run_gtk(self):
         Gtk.main()
 
 def main():

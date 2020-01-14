@@ -18,8 +18,12 @@ def list_test_cases():
     tc.add_test_case('TofTestCases.TestCaseID', ['toffpga'], ['connection_test'])
     tc.add_test_case('TofTestCases.TestCaseCalibrate', ['toffpga'])
     tc.add_test_case('TofTestCases.TestCaseMeasure', ['toffpga'])
+    tc.add_test_case('TofTestCases.TestCaseGetAllHistograms', ['toffpga'])
+    tc.add_test_case('TofTestCases.TestCaseTofRegHistogram', ['toffpga'])
     tc.add_test_case('MotorTestCases.MotTestCaseID', ['motorcontroller_unit'], ['connection_test'])
     tc.add_test_case('MotorTestCases.MotTestCaseDrive', ['motorcontroller_unit'])
+    tc.add_test_case('IodaTestCases.TestCaseID', ['ioda'], ['connection_test'])
+    tc.add_test_case('IodaTestCases.TestCaseADC', ['ioda'], ['testnow'])
 
     return tc
 
@@ -56,15 +60,16 @@ def create_testif():
 
     # init interface (Gepin: General Purpose Interface)
     #serial_port = '/dev/ttyS0'
-    serial_port = '/dev/ttyUSB0'
-    gepin_phy_serial = GepinPhySerial(serial_port, baudrate=9600)
+    #serial_port = '/dev/ttyUSB0'
+    #gepin_phy_serial = GepinPhySerial(serial_port, baudrate=9600)
 
     gepin = GepinMaster(gepin_tcp)
 
     gepin_tcp2 = GepinPhyTcp("192.168.1.105", 9802)
     gepin_motor = GepinMaster(gepin_tcp2)
 
-    gepin_tofpcb = GepinMaster(gepin_phy_serial)
+    gepin_phy_tof = GepinPhyTcp("192.168.1.105", 9803)
+    gepin_tofpcb = GepinMaster(gepin_phy_tof)
 
     # list test interfaces
     test_ifs={}
@@ -93,7 +98,16 @@ def main():
         id = AbstractTestCase.gen_id()
     else:
         id = '20190916-134835'
-        id = '20190916-154813'
+        id = '20200111-123843' #old fpga, electrical connection
+        id = '20200111 - 130006' ##old fpga, optical connection
+        #20200111-135158 slot_seelct=5
+        #20200111-135548 slot 6
+        #140419: old fpga
+        id = '20200111-140419'
+        #20200111-141320 new fpga
+
+
+
 
     # create Test Env Main Controller and set id
     main_controller = TestEnvMainControl(testif, hierarchy, controllers, testcases, requirements, guis)
@@ -103,17 +117,22 @@ def main():
     mode = 'gui'  # to be adopted by user
     if mode == 'test':
 
+        print("Test ID: " + id)
+
         testenv_filter = TestEnvFilter()
 
         # filters: to be adapted by user
         #filter for units
         testenv_filter.unit_filter_type = 'keep'
-        testenv_filter.units = ['motorcontroller_unit']
+        testenv_filter.units = ['ioda'] #toffpga
 
         #filter for test case tags
         #testenv_filter.units = ['toffpga']
         #testenv_filter.tc_filter_type = 'keep'
         #testenv_filter.tc_tags = ['connection_test']
+        testenv_filter.tc_filter_type = 'keep'
+        testenv_filter.tc_tags = ['testnow']
+
 
         if new:
             main_controller.run("ioda", True, testenv_filter)
@@ -124,8 +143,10 @@ def main():
 
         ioda_setup = main_controller.control()
         ioda_setup.sub_unit['tofpcb'].gui.run_gui()
-        #ioda_setup.sub_unit['toffpga'].gui.run_gui()
-        #ioda_setup.sub_unit['motorcontroller_unit'].gui.run_gui()
+        ioda_setup.sub_unit['toffpga'].gui.run_gui()
+        ioda_setup.sub_unit['motorcontroller_unit'].gui.run_gui()
+
+        ioda_setup.sub_unit['toffpga'].gui.gui_view.run_gtk()
 
 
 if __name__ == "__main__":

@@ -32,7 +32,8 @@ class GuiCtrl:
         self.gui_view.register_read_param_callback(self.read_param)
         self.gui_view.register_write_param_callback(self.write_param)
         self.auto_set_param_list()
-        self.gui_view.run_gui()
+        self.gui_view.run_gui(self.controller.registers.name)
+
 
     def extract_memory_map(self):
         parameter_list = [] # list of tuples

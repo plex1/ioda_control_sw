@@ -28,3 +28,6 @@ class csr_tofpcb():
 
 
         return registers
+
+    def get_name(self):
+        return "Tof PCB"

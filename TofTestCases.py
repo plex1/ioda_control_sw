@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 class TestCaseID(AbstractTestCase):
 
-    def __init__(self, id, unit_name='', testif={}, controller=None):
+    def __init__(self, id, unit_name='', testif={}, controller=None, setup=None):
         self.testif = testif
         TestCaseName = 'TestCaseID'
         super().__init__(TestCaseName, id, unit_name, controller)
@@ -24,7 +24,7 @@ class TestCaseID(AbstractTestCase):
 
 class TestCaseCalibrate(AbstractTestCase):
 
-    def __init__(self,id, unit_name='', testif={}, controller=None):
+    def __init__(self,id, unit_name='', testif={}, controller=None, setup=None):
         self.testif = testif
         TestCaseName = 'TestCaseCalibrate'
         super().__init__(TestCaseName, id, unit_name, controller)
@@ -101,15 +101,13 @@ class TestCaseCalibrate(AbstractTestCase):
 
 class TestCaseMeasure(AbstractTestCase):
 
-    def __init__(self, id, unit_name='', testif={}, controller=None):
+    def __init__(self, id, unit_name='', testif={}, controller=None, setup=None):
         self.testif = testif
         TestCaseName = 'TestCaseMeasure'
         super().__init__(TestCaseName, id, unit_name, controller)
 
     def execute(self):
         AbstractTestCase.execute(self)
-
-        variable_slot = True
 
         # init tofcontrol
         tofc = self.controller
@@ -121,25 +119,24 @@ class TestCaseMeasure(AbstractTestCase):
         # settings for time measurements
         registers.reg['trigTestPeriod'].write(20)
         registers.reg['ringOscSetting'].write(0)
-        slot_select = 6
-        registers.reg['histogramFilter'].write(2 ** 16 + slot_select)
+
 
         delta = 1
-        delay_set = range(0, 141, delta)
+        delay_set = range(0, 127, delta)
+        #delay_set = range(10,26)
         delay_tmeas = []
+        histograms = []
 
         for delay in delay_set:
             tofc.set_delay(delay)
-            if variable_slot:
-                slot_select = registers.reg['averageFilter'].read() + 1 # todo: tbd +1?
-                print('Slot select' + str(slot_select))
-                registers.reg['histogramFilter'].write(2 ** 16 + slot_select)
             time_meas = tofc.measure_delay()
             delay_tmeas.append(time_meas)
             print("time: " + str(time_meas))
+            histograms.append(tofc.last_histogram)
 
         self.data_logger.add_data('delay_set', (np.array(delay_set) * 0.25).tolist())
         self.data_logger.add_data('delay_meas', delay_tmeas)
+        self.data_logger.add_data('histograms', histograms)
 
     def evaluate(self):
         AbstractTestCase.evaluate(self)
@@ -147,6 +144,7 @@ class TestCaseMeasure(AbstractTestCase):
         # post processing
         delay_set = self.data_logger.get_data("delay_set")
         delay_tmeas = self.data_logger.get_data("delay_meas")
+        histograms = self.data_logger.get_data("histograms")
 
         delay_tmeas_rel = np.array(delay_tmeas) - delay_tmeas[0]
         delay_tmeas_rel = delay_tmeas_rel / delay_tmeas_rel[-1] * delay_set[-1]
@@ -191,3 +189,117 @@ class TestCaseMeasure(AbstractTestCase):
         plt.ylabel('Delay Measured Difference, offset corrected / gain corrected [ps]')
         plt.savefig('data/' + self.prefix + '_measured_rel_diff.png')
 
+        if False:
+            for idx, hist in enumerate(histograms):
+                plt.figure(0)
+                plt.clf()
+                plt.plot(np.array(hist), 'x-')
+                plt.grid(True, which="both")
+                plt.xlabel('Tap')
+                plt.ylabel('Delay per Tap [ns]')
+                plt.savefig('data/' + self.prefix + '_hist'+str(idx)+'_delay'+str(delay_set[idx])+'.png')
+
+
+class TestCaseGetAllHistograms(AbstractTestCase):
+
+    def __init__(self, id, unit_name='', testif={}, controller=None, setup=None):
+        self.testif = testif
+        TestCaseName = 'TestCaseMeasure'
+        super().__init__(TestCaseName, id, unit_name, controller)
+
+    def execute(self):
+        AbstractTestCase.execute(self)
+
+        # init tofcontrol
+        tofc = self.controller
+        registers = tofc.registers
+        tofc.init()
+        tofc.cal_time = 1
+        tofc.calibrate()
+
+        # settings for time measurements
+        registers.reg['trigTestPeriod'].write(20)
+        registers.reg['ringOscSetting'].write(0)
+
+
+        delta = 1
+        delay_set = range(0, 127, delta)
+        delay_tmeas = []
+        histograms = []
+
+        tofc.registers.reg['histogramFilter'].write(0)  # keep all pulses
+
+        for delay in delay_set:
+            print("delay: " + str(delay*0.25))
+            tofc.set_delay(delay)
+            hist = tofc.get_histogram(tofc.n_taps,1)
+            histograms.append(hist)
+
+        self.data_logger.add_data('delay_set', (np.array(delay_set) * 0.25).tolist())
+        self.data_logger.add_data('histograms', histograms)
+
+    def evaluate(self):
+        AbstractTestCase.evaluate(self)
+
+        # post processing
+        delay_set = self.data_logger.get_data("delay_set")
+        histograms = self.data_logger.get_data("histograms")
+
+        for idx, hist in enumerate(histograms):
+            plt.figure(0)
+            plt.clf()
+            plt.plot(np.array(hist), 'x-')
+            plt.grid(True, which="both")
+            plt.xlabel('Tap')
+            plt.ylabel('Delay per Tap [ns]')
+            plt.savefig('data/' + self.prefix + '_hist'+str(idx)+'_delay'+str(delay_set[idx])+'.png')
+
+
+class TestCaseTofRegHistogram(AbstractTestCase):
+
+    def __init__(self, id, unit_name='', testif={}, controller=None, setup=None):
+        self.testif = testif
+        TestCaseName = 'TofRegHistogram'
+        super().__init__(TestCaseName, id, unit_name, controller)
+
+    def execute(self):
+        AbstractTestCase.execute(self)
+
+
+
+        # init tofcontrol
+        tofc = self.controller
+        registers = tofc.registers
+        tofc.init()
+        tofc.cal_time = 1
+        tofc.calibrate()
+
+
+
+        # settings for time measurements
+        registers.reg['trigTestPeriod'].write(20)
+        registers.reg['ringOscSetting'].write(0)
+        registers.reg['ringOscSetting'].write(4)  # set to internal Oscillator
+
+
+        delta = 1
+        delay_set = range(0, 127, delta)
+        #delay_set = range(10,26)
+        delay_tmeas = []
+        histograms = []
+
+        delay = 7 #14
+        delay = 67
+        tofc.set_delay(delay)
+        tofc.registers.reg['control'].field['edge'].clear()
+        time_meas = tofc.measure_delay()
+        histogram1 = tofc.last_histogram
+        histogram2 = tofc.get_tofreg_histogram(600, True)
+
+
+        self.data_logger.add_data('delay_set', delay)
+        self.data_logger.add_data('histogram1', histogram1)
+        self.data_logger.add_data('histogram2', histogram2)
+
+    def evaluate(self):
+        AbstractTestCase.evaluate(self)

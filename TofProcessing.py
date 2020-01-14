@@ -32,7 +32,8 @@ class HistogramProcessing(object):
     def prune_keep_group(self, n):
         group_nr = -1
         in_group = False
-        min_detect = 100
+        min_detect = 200
+        n_dist=1000
         for i in range(0, self.get_num_taps()):
             if self.histogram[i] > min_detect:
                 if not in_group:
@@ -40,8 +41,16 @@ class HistogramProcessing(object):
                     group_nr = group_nr + 1
                 if group_nr != n:
                     self.histogram[i] = 0  # prune
+
+                n_dist = 0
             else:
-                in_group = False
+                if n_dist>2:
+                    in_group = False
+                    self.histogram[i] = 0 #set to zero, better delete all which are more than delta away
+                else:
+                    n_dist = n_dist + 1
+
+
 
     def plot_histogram(self):
         plt.figure(1)
