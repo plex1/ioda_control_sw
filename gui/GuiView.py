@@ -8,16 +8,20 @@ class GuiView(Gtk.Window):
     def __init__(self):
 
         self.parameter_list = None
+        self.field_list = None
         self.read_param_callback = None
+        self.read_field_param_callback = None
         self.write_param_callback = None
+        self.write_field_param_callback = None
         self.label_module_name = None
+        self.module_name = ""
 
     def set_module_name(self, name="-"):
-        self.label_module_name.set_text("Test Env GUI for Module: \n"+ name)
+        self.module_name = name
 
     def compose_window(self):
 
-        Gtk.Window.__init__(self, title="TestEnv GUI")
+        Gtk.Window.__init__(self, title="TestEnv GUI - "+self.module_name)
         self.set_border_width(10)
 
         #Setting up the self.grid in which the elements are to be positionned
@@ -28,16 +32,15 @@ class GuiView(Gtk.Window):
 
         label = Gtk.Label()
         self.label_module_name = label
-        self.set_module_name()
         label.set_justify(Gtk.Justification.LEFT)
         self.grid.attach(label, 0, 0, 1, 1)
 
         #Creating the ListStore model
-        self.parameter_liststore = Gtk.ListStore(str, str, str, str, str)
+        self.parameter_liststore = Gtk.ListStore(str, str, str, str, str, str)
 
         #creating the treeview, making it use the filter as a model, and adding the columns
         self.treeview = Gtk.TreeView(self.parameter_liststore)
-        for i, column_title in enumerate(["R/W", "Address", "Parameter Name", "Value", "Data Type"]):
+        for i, column_title in enumerate(["R/W", "Address", "Parameter Name", "Field Name", "Value", "Data Type"]):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             self.treeview.append_column(column)
@@ -57,15 +60,31 @@ class GuiView(Gtk.Window):
         label.set_justify(Gtk.Justification.RIGHT)
         hbox.pack_start(label, True, True, 0)
 
+        # name combo
         name_store = Gtk.ListStore('guint', str)
-        for parameter_ref in self.parameter_list:
-            name_store.append([parameter_ref[0], parameter_ref[1]])
+        for reg_name, reg in sorted(self.parameter_list.items(), key=lambda item: item[1].addr):
+            name_store.append([self.parameter_list[reg_name].addr, reg_name])
 
         name_combo = Gtk.ComboBox.new_with_model_and_entry(name_store)
         name_combo.set_entry_text_column(1)
         hbox.pack_start(name_combo, True, True, 0)
         self.name_combo = name_combo
 
+        label = Gtk.Label()
+        label.set_text("Field:")
+        label.set_justify(Gtk.Justification.RIGHT)
+        hbox.pack_start(label, True, True, 0)
+
+        # field combo
+        field_store = Gtk.ListStore('guint', str)
+        field_combo = Gtk.ComboBox.new_with_model_and_entry(field_store)
+        field_combo.set_entry_text_column(1)
+        hbox.pack_start(field_combo, True, True, 0)
+        self.field_combo = field_combo
+
+        name_combo.connect("changed", self.on_update_name_combo)
+
+        # red button
         button = Gtk.Button.new_with_label("Read")
         button.connect("clicked", self.on_click_read_param)
         hbox.pack_start(button, True, True, 0)
@@ -79,6 +98,7 @@ class GuiView(Gtk.Window):
         self.data_entry.set_text("111")
         hbox.pack_start(self.data_entry, True, True, 0)
 
+        # write button
         button = Gtk.Button.new_with_label("Write")
         button.connect("clicked", self.on_click_write_param)
         hbox.pack_start(button, True, True, 0)
@@ -87,53 +107,89 @@ class GuiView(Gtk.Window):
         button.connect("clicked", self.on_click_clear_all_param)
         hbox.pack_start(button, True, True, 0)
 
+        self.label_module_name.set_text("Test Env GUI for Module: \n" + self.module_name)
+
         self.show_all()
+
+    def on_update_name_combo(self, combo):
+        field_store = Gtk.ListStore('guint', str)
+        reg_name = self.get_selected_param()['name']
+        field_store.append([0, ""]) #add field = complete register
+        if reg_name is not None:
+            if self.field_list is not None:
+                if self.field_list[reg_name].field is not None:
+                    for field_name, field in sorted(self.field_list[reg_name].field.items(), key=lambda item: item[1].bit_offset):
+                        field = self.field_list[reg_name].field[field_name]
+                        field_store.append([field.bit_offset, field_name])
+
+            Gtk.ComboBox.set_model(self.field_combo, field_store)
 
     def get_entered_data(self):
         return int(self.data_entry.get_text())
 
-    def get_sel_addr(self):
+    def get_selected_param(self):
         # find add in parameter list
         combo = self.name_combo
         tree_iter = combo.get_active_iter()
+        param={}
         if tree_iter is not None:
             model = combo.get_model()
-            addr = model[tree_iter][0]
-            print("Selected: addr=%s" % addr)
+            param['addr'] = model[tree_iter][0]
+            param['name'] = model[tree_iter][1]
+            print("Selected: addr=%s" % param['addr'])
         else:
-            addr = None
+            param['addr'] = None
+            param['name'] = None
 
-        return addr
+        return param
+
+    def get_selected_field(self):
+        # find add in parameter list
+        combo = self.field_combo
+        tree_iter = combo.get_active_iter()
+        field={}
+        if tree_iter is not None:
+            model = combo.get_model()
+            field['offset'] = model[tree_iter][0]
+            field['name'] = model[tree_iter][1]
+        else:
+            field['offset'] = None
+            field['name'] = None
+
+        return field
 
     def on_click_read_param(self, button):
 
-        addr = self.get_sel_addr()
-        # search addr in parameter list
-        entry = next((item for item in self.parameter_list if item[0] == addr), None)
+        addr = self.get_selected_param()['addr']
+        name = self.get_selected_param()['name']
+        field = self.get_selected_field()['name']
 
-        if entry is not None:
-            # run read_param
-            name = entry[1]
-            format = entry[2]
+
+        # run read_param
+        if field is not None and field is not "":
+            val = self.read_field_param_callback(name, field)
+        else:
             val = self.read_param_callback(name)
-            elem = ("R", hex(addr), name, hex(val), format)
-            print(elem)
-            self.parameter_liststore.insert(0, list(elem))
+        format = "UINT32"
+        elem = ("R", hex(addr), name, field, hex(val), format)
+        print(elem)
+        self.parameter_liststore.insert(0, list(elem))
 
     def on_click_write_param(self, button):
-        addr = self.get_sel_addr()
-        # search addr in parameter list
-        entry = next((item for item in self.parameter_list if item[0] == addr), None)
+        addr = self.get_selected_param()['addr']
+        name = self.get_selected_param()['name']
+        field = self.get_selected_field()['name']
 
-        if entry is not None:
-            #run write param
-            name = entry[1]
-            format = entry[2]
-            val = self.get_entered_data()
+        #run write param
+        format = "UINT32"
+        val = self.get_entered_data()
+        if field is not None and field is not "":
+            ret = self.write_field_param_callback(name, field, val)
+        else:
             ret = self.write_param_callback(name, val)
-            elem = ("W", hex(addr), name, hex(val), format)
-            print(elem)
-            self.parameter_liststore.insert(0, list(elem))
+        elem = ("W", hex(addr), name, field, hex(val), format)
+        print(elem)
+        self.parameter_liststore.insert(0, list(elem))
 
 
     def on_click_clear_all_param(self, button):
@@ -142,36 +198,53 @@ class GuiView(Gtk.Window):
     def register_read_param_callback(self, cb):
         self.read_param_callback = cb
 
+    def register_read_field_param_callback(self, cb):
+        self.read_field_param_callback = cb
+
     def register_write_param_callback(self, cb):
         self.write_param_callback = cb
+
+    def register_write_field_param_callback(self, cb):
+        self.write_field_param_callback = cb
 
     def set_parameter_list(self, parameter_list):
         self.parameter_list = parameter_list
 
+    def set_field_list(self, field_list):
+        self.field_list = field_list
 
-    def run_gui(self, name):
-
+    def run_gui(self):
         self.compose_window()
-        self.set_module_name(name)
         self.connect("destroy", Gtk.main_quit)
         self.show_all()
 
-        #Gtk.main()
 
     def run_gtk(self):
         Gtk.main()
 
 def main():
+    class Register:
+
+        def __init__(self, interface, addr, name="", description=""):
+            self.interface = interface
+            self.addr = addr
+            self.name = name
+            self.description = description
+            self.field = {}
 
     # list of test cases
     # list of tuples
-    parameter_list = [(0x0, "Parameter 1", "BOOLEAN"),
-                      (0x1, "Parameter 2", "UNIT16"),
-                      (0x2, "Parameter 3", "UNIT16"),
-                      (0x3, "Parameter 4", "UNIT16")]
+    reg1 = Register(None, 0x1)
+    reg2 = Register(None, 0x2)
+    parameter_list = {}
+    parameter_list["Register 1"]= reg1
+    parameter_list["Register 2"] = reg2
 
-    gv = GuiView(parameter_list)
+    gv = GuiView()
+    gv.set_parameter_list(parameter_list)
+    gv.set_module_name("gui name")
     gv.run_gui()
+    gv.run_gtk()
 
 
 if __name__ == "__main__":

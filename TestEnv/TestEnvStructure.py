@@ -368,7 +368,7 @@ class TestEnvMainControl(object):
                 top_unit = test_case_unit
                 setup = self.gen_setup(self.hierarchy, self.controllers, self.testif, self.guis, top_unit)
                 inst = testcaseclass(self.id, test_case_unit, self.testif,
-                                     self.controllers.get_controller_instance(test_case_unit), setup)
+                                     setup.ctrl, setup)
 
                 tc.append({'name': test_case['name'], 'unit': test_case_unit, 'inst': inst})
 

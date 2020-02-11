@@ -204,7 +204,7 @@ class TestCaseGetAllHistograms(AbstractTestCase):
 
     def __init__(self, id, unit_name='', testif={}, controller=None, setup=None):
         self.testif = testif
-        TestCaseName = 'TestCaseMeasure'
+        TestCaseName = 'TestCaseGetAllHistograms'
         super().__init__(TestCaseName, id, unit_name, controller)
 
     def execute(self):
@@ -259,7 +259,7 @@ class TestCaseTofRegHistogram(AbstractTestCase):
 
     def __init__(self, id, unit_name='', testif={}, controller=None, setup=None):
         self.testif = testif
-        TestCaseName = 'TofRegHistogram'
+        TestCaseName = 'TestCaseTofRegHistogram'
         super().__init__(TestCaseName, id, unit_name, controller)
 
     def execute(self):

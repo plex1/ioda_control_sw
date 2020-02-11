@@ -34,6 +34,12 @@ class MotTestCaseDrive(AbstractTestCase):
 
         registers = self.controller.registers
 
+        mot_coord=[2000,3000]
+        ae_coord=self.controller.mot_to_ae(mot_coord)
+        mot_coord_2=self.controller.ae_to_mot(ae_coord)
+        self.checker.check('is_equal', mot_coord, mot_coord_2, 'Transformation between coordinate systems')
+
+
         # set zero
         self.controller.set_zero_pos()
         self.controller.set_step_resolution_1o16()

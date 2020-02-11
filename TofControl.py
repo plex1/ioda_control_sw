@@ -5,6 +5,7 @@ import numpy as np
 
 from TestEnv.TestEnvStructure import BaseController
 from Gepin.Gepin import BaseGepinRegisters
+from TestEnv.TestEnvLog import DataLogger
 from csr.csr_tofperipheral_manual import csr_tofperipheral
 
 
@@ -18,6 +19,7 @@ class TofControl(BaseController, BaseGepinRegisters):
 
         self.debug = 0
         self.cal_time = 0.5
+        self.measure_time = 1
         self.n_taps = 100
         self.clock_period = 25  # 25ns 40MHz clock
         self.last_histogram = None
@@ -94,6 +96,8 @@ class TofControl(BaseController, BaseGepinRegisters):
         self.tofp.use_midpoint = True
         self.tofp.calibrate_bins = True
 
+        self.init()
+
         # calibrate
         calib_histograms = self.get_calibration_histograms(self.n_taps)
         self.tofp.calibration_update(calib_histograms[0], calib_histograms[1], self.clock_period)
@@ -144,8 +148,12 @@ class TofControl(BaseController, BaseGepinRegisters):
         return float(period_std)
 
     def measure_delay(self):
-        time_meas = self.measure_delay_tofp(self.tofp, self.n_taps)
+        [time_meas, snr] = self.measure_delay_tofp(self.tofp, self.n_taps)
         return time_meas
+
+    def measure_delay_snr(self):
+        timesnr_meas = self.measure_delay_tofp(self.tofp, self.n_taps)
+        return timesnr_meas
 
     def select_slot(self, n):
         self.registers.reg['histogramFilter'].write(2 ** 16 + n)
@@ -154,16 +162,18 @@ class TofControl(BaseController, BaseGepinRegisters):
 
         slot_select = self.registers.reg['averageFilter'].read()
         slot_select = int(slot_select+1)
+        slot_select = 7 #hack
         self.select_slot(slot_select)
 
         hp = HistogramProcessing()
-        values = self.get_histogram(n_taps, 1)
+        values = self.get_histogram(n_taps, self.measure_time)
         self.last_histogram = values.copy()
         hp.set_histogram(values)
-        hp.prune_keep_group(0)
+        snr=hp.prune_keep_group(0)
 
         time_meas = tofp.get_time(hp, slot_select)
-        return time_meas
+        return [time_meas, snr]
+
 
     def get_tofreg_histogram(self, n, rising=True):
         def get_edge(value, rising=True):

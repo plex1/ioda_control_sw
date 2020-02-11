@@ -201,7 +201,7 @@
         {
           "bitOffset" : 7,
           "bitWidth" : 1,
-          "name" : "SyncOn",
+          "name" : "syncOn",
           "description" : "enable sync1 and sync2 output",
           "comment" : "0: Off\n1: On",
           "access" : {
@@ -404,6 +404,27 @@
           "bitWidth" : 12,
           "name" : "lockin_sync2_end",
           "description" : "end position of Sync2",
+          "comment" : "0-2**12-1  : step size (LSB) = 25ns",
+          "access" : {
+            "read" : true,
+            "write" : true
+          }
+        }
+      ],
+      "access" : {
+        "read" : true,
+        "write" : true
+      }
+    },
+    {
+      "address" : 80,
+      "name" : "trig_length",
+      "fields" : [
+        {
+          "bitOffset" : 0,
+          "bitWidth" : 12,
+          "name" : "trig_length",
+          "description" : "length of trig signal",
           "comment" : "0-2**12-1  : step size (LSB) = 25ns",
           "access" : {
             "read" : true,

@@ -28,11 +28,29 @@ class GuiCtrl:
             print("warning: register write not successful")
             return 0
 
+    def write_field_param(self, param, field, value):
+        try:
+            return self.controller.registers.reg[param].field[field].readModifyWrite(value)
+        except:
+            print("warning: register field write not successful")
+            return 0
+
+    def read_field_param(self, param, field):
+        try:
+            return self.controller.registers.reg[param].field[field].read()
+        except:
+            print("warning: register field read not successful")
+            return 0
+
     def run_gui(self):
         self.gui_view.register_read_param_callback(self.read_param)
         self.gui_view.register_write_param_callback(self.write_param)
-        self.auto_set_param_list()
-        self.gui_view.run_gui(self.controller.registers.name)
+        self.gui_view.register_read_field_param_callback(self.read_field_param)
+        self.gui_view.register_write_field_param_callback(self.write_field_param)
+        self.gui_view.set_parameter_list(self.controller.registers.reg)
+        self.gui_view.set_field_list(self.controller.registers.reg)
+        self.gui_view.set_module_name(self.controller.registers.name)
+        self.gui_view.run_gui()
 
 
     def extract_memory_map(self):

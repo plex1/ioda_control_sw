@@ -32,24 +32,46 @@ class HistogramProcessing(object):
     def prune_keep_group(self, n):
         group_nr = -1
         in_group = False
-        min_detect = 200
-        n_dist=1000
+        min_detect = np.max(self.histogram)/10
+        keep_dist = 3
+        n_dist = 1000
+        histogram_orig = self.histogram.copy()
+        in_group_count=0
+
         for i in range(0, self.get_num_taps()):
             if self.histogram[i] > min_detect:
                 if not in_group:
                     in_group = True
                     group_nr = group_nr + 1
+                    in_group_count = 0
+                    if group_nr == n:
+                        for k in range(i-1,i-keep_dist-1, -1):
+                            if k > 0:
+                                self.histogram[k] = histogram_orig[k]
                 if group_nr != n:
                     self.histogram[i] = 0  # prune
 
+                in_group_count+=1
+                if in_group_count>25: # group can not be longer than 20 slots
+                    in_group_count = 0
+                    in_group=False
+
+
                 n_dist = 0
             else:
-                if n_dist>2:
+                if n_dist>=keep_dist:
                     in_group = False
-                    self.histogram[i] = 0 #set to zero, better delete all which are more than delta away
                 else:
                     n_dist = n_dist + 1
+                if in_group == False or (group_nr != n):
+                    self.histogram[i] = 0
 
+        total = np.sum(np.array(histogram_orig))
+        kept = np.sum(np.array(self.histogram))
+        snr = kept/(total-kept)
+        return [total.astype(float), snr.astype(float)]
+
+        # other possibility search for maximum
 
 
     def plot_histogram(self):

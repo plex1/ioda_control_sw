@@ -43,6 +43,9 @@ class DataLogger(object):
     def get_data(self, name):
         return self.db.search(self.query.Name == name)[0]['data']
 
+    def get_data_latest(self, name):
+        return self.db.search(self.query.Name == name)[-1]['data']
+
 import numpy as np
 
 class Checker(object):

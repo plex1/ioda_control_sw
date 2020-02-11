@@ -23,7 +23,13 @@ def list_test_cases():
     tc.add_test_case('MotorTestCases.MotTestCaseID', ['motorcontroller_unit'], ['connection_test'])
     tc.add_test_case('MotorTestCases.MotTestCaseDrive', ['motorcontroller_unit'])
     tc.add_test_case('IodaTestCases.TestCaseID', ['ioda'], ['connection_test'])
-    tc.add_test_case('IodaTestCases.TestCaseADC', ['ioda'], ['testnow'])
+    tc.add_test_case('IodaTestCases.TestCaseADC', ['ioda'])
+    tc.add_test_case('IodaTestCases.TestCaseVapdCalibration', ['ioda'])
+    tc.add_test_case('IodaTestCases.TestCaseAbsorptionCalibration', ['ioda'], ['testnow'])
+    tc.add_test_case('IodaTestCases.TestCaseLine', ['ioda'])
+    tc.add_test_case('IodaTestCases.TestCase3d', ['ioda'])
+
+
 
     return tc
 
@@ -34,7 +40,7 @@ def list_controllers():
     con.add_controller('toffpga', 'TofControl.TofControl', {"gepin_offset": 0xF0030000})
     con.add_controller('motorcontroller_unit', 'MotorControl.MotorControl')
     con.add_controller('tofpcb', 'TofPCB.TofPcbControl')
-
+    con.add_controller('ioda', 'IodaControl.IodaControl')
     return con
 
 
@@ -44,6 +50,8 @@ def list_guis():
     guis.add_gui('toffpga', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
     guis.add_gui('motorcontroller_unit', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
     guis.add_gui('tofpcb', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
+    guis.add_gui('ioda', 'gui.DistanceMeasureGuiCtrl.DistanceMeasureGuiCtrl',
+                 'gui.DistanceMeasureGuiView.DistanceMeasureGuiView')
     return guis
 
 
@@ -93,20 +101,12 @@ def main():
     guis = list_guis()
 
     # test id
-    new = True  # to be adopted by user
+    new = False  # to be adopted by user
     if new:
         id = AbstractTestCase.gen_id()
     else:
-        id = '20190916-134835'
-        id = '20200111-123843' #old fpga, electrical connection
-        id = '20200111 - 130006' ##old fpga, optical connection
-        #20200111-135158 slot_seelct=5
-        #20200111-135548 slot 6
-        #140419: old fpga
-        id = '20200111-140419'
-        #20200111-141320 new fpga
-
-
+        id = '20200125-042610' #3d map
+        id = '20200126-053540'
 
 
     # create Test Env Main Controller and set id
@@ -145,6 +145,7 @@ def main():
         ioda_setup.sub_unit['tofpcb'].gui.run_gui()
         ioda_setup.sub_unit['toffpga'].gui.run_gui()
         ioda_setup.sub_unit['motorcontroller_unit'].gui.run_gui()
+        ioda_setup.gui.run_gui()
 
         ioda_setup.sub_unit['toffpga'].gui.gui_view.run_gtk()
 

@@ -40,15 +40,15 @@ class MotorControl(BaseController, BaseGepinRegisters):
     def ae_to_mot(self, ae_coord):
         s1 =  ae_coord[0]/self.k1
         s2 =  ae_coord[1]/self.k2 + ae_coord[0]/self.k12_inv
-        s1 = round(int(s1))
-        s2 = round(int(s2))
+        s1 = int(round(s1))
+        s2 = int(round(s2))
         mot_coord = [s1, s2]
         return mot_coord
 
     def mot_to_ae(self, mot_coord):
-        s1 =  mot_coord[0]*self.k1
-        s2 =  mot_coord[1]*self.k2 + mot_coord[0]*self.k12
-        ae_coord = [s1, s2]
+        a =  mot_coord[0]*self.k1
+        e =  mot_coord[1]*self.k2 + mot_coord[0]*self.k12
+        ae_coord = [a, e]
         return ae_coord
 
     def goto_zero(self):
