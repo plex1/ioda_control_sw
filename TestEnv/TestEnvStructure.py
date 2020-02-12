@@ -126,7 +126,7 @@ class Unit(object):
 
     def __init__(self, name, testif):
         self.ctrl = None
-        self.gui = None
+        self.guis = {}
         self.sub_unit={}
         self.name = name
         self.testif = testif
@@ -134,8 +134,8 @@ class Unit(object):
     def set_controller(self, ctrl):
         self.ctrl = ctrl
 
-    def set_gui(self, gui):
-        self.gui = gui
+    def add_gui(self,gui_name, gui):
+        self.guis[gui_name]=gui
 
     def add_sub_unit(self, name):
         self.sub_unit[name] = Unit(name, self.testif)
@@ -155,11 +155,11 @@ class Unit(object):
         else:
             ctrl.set_sub_units(self.sub_unit)
 
-        gui = guis.get_gui_instance(self.name, ctrl)
-        self.set_gui(gui)
-        if gui is None:
-            pass
-            #print("Warning: GUI for " + self.name + " not found")
+        # add guis
+        unit_gui_names = guis.get_gui_names_of_unit(self.name)
+        for gui_name in unit_gui_names:
+            gui = guis.get_gui_instance(self.name, gui_name, ctrl)
+            self.add_gui(gui_name, gui)
 
 
 class UnitHierarchy(object):
@@ -263,16 +263,24 @@ class Guis(object):
             self.db.purge_tables()
         self.query = Query()
 
-    def add_gui(self, unit_name, gui_controller, gui_view, tags=[]):
+    def add_gui(self, unit_name, gui_name, gui_controller, gui_view, tags=[]):
         self.db.insert({'UnitName': unit_name,
-                        'GuiController' : gui_controller,
+                        'GuiName': gui_name,
+                        'GuiController': gui_controller,
                         'GuiView': gui_view,
-                        'Tags' : tags,
+                        'Tags': tags,
                         'Time': datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S")
                         })
 
-    def get_gui(self, unit_name):
-        result = self.db.search(where('UnitName') == unit_name)
+    def get_gui_names_of_unit(self, unit_name):
+        results = self.db.search((where('UnitName') == unit_name))
+        gui_name_list = []
+        for result in results:
+            gui_name_list.append(result['GuiName'])
+        return gui_name_list
+
+    def get_gui(self, unit_name, gui_name):
+        result = self.db.search((where('UnitName') == unit_name) & (where('GuiName') == gui_name))
         if len(result) == 0:
             return None
         else:
@@ -280,8 +288,8 @@ class Guis(object):
             return unitfound['GuiView'], unitfound['GuiController']
 
 
-    def get_gui_instance(self, unit_name, controller):
-        gui = self.get_gui(unit_name)
+    def get_gui_instance(self, unit_name, gui_name, controller):
+        gui = self.get_gui(unit_name, gui_name)
         if gui is None:
             return None
         else:

@@ -140,7 +140,7 @@ class GepinMaster(object):
 from Gepin.Registers import Registers
 
 class BaseGepinRegisters(object):
-    def __init__(self, csr_def, gepin_if, parameters={}):
+    def __init__(self, csr_def, gepin_if, parameters={}, address_shift=0):
 
         # init registers
         registers = Registers(gepin_if)
@@ -151,8 +151,9 @@ class BaseGepinRegisters(object):
             registers.use_json_offset = True
             registers.offset = 0
 
+        registers.address_shift=address_shift
         if isinstance(csr_def, str): # json file path
-            registers.populate_json(csr_def)
+            registers.populate_file(csr_def)
         else: # python class
             registers.populate(csr_def)
         self.registers = registers

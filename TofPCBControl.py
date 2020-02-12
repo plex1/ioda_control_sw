@@ -11,8 +11,9 @@ class TofPcbControl(BaseController, BaseGepinRegisters):
     def __init__(self, testif, sub_units = [], parameters={}):
 
         BaseController.__init__(self, testif, sub_units, parameters)
-        csr_def = csr_tofpcb()
-        BaseGepinRegisters.__init__(self, csr_def, testif['gepin_tofpcb'], parameters)
+        #csr_def = csr_tofpcb()
+        csr_def = "csr/TofPCB.cheby" #file also used in embedded sw
+        BaseGepinRegisters.__init__(self, csr_def, testif['gepin_tofpcb'], parameters, -2)
 
         self.debug = 0
 

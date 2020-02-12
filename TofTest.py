@@ -39,7 +39,7 @@ def list_controllers():
     con = Controllers()
     con.add_controller('toffpga', 'TofControl.TofControl', {"gepin_offset": 0xF0030000})
     con.add_controller('motorcontroller_unit', 'MotorControl.MotorControl')
-    con.add_controller('tofpcb', 'TofPCB.TofPcbControl')
+    con.add_controller('tofpcb', 'TofPCBControl.TofPcbControl')
     con.add_controller('ioda', 'IodaControl.IodaControl')
     return con
 
@@ -47,10 +47,10 @@ def list_controllers():
 def list_guis():
     # list of test cases
     guis = Guis()
-    guis.add_gui('toffpga', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
-    guis.add_gui('motorcontroller_unit', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
-    guis.add_gui('tofpcb', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
-    guis.add_gui('ioda', 'gui.DistanceMeasureGuiCtrl.DistanceMeasureGuiCtrl',
+    guis.add_gui('toffpga', 'default', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
+    guis.add_gui('motorcontroller_unit','default', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
+    guis.add_gui('tofpcb', 'default', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
+    guis.add_gui('ioda', 'default', 'gui.DistanceMeasureGuiCtrl.DistanceMeasureGuiCtrl',
                  'gui.DistanceMeasureGuiView.DistanceMeasureGuiView')
     return guis
 
@@ -142,12 +142,12 @@ def main():
     if mode == 'gui':
 
         ioda_setup = main_controller.control()
-        ioda_setup.sub_unit['tofpcb'].gui.run_gui()
-        ioda_setup.sub_unit['toffpga'].gui.run_gui()
-        ioda_setup.sub_unit['motorcontroller_unit'].gui.run_gui()
-        ioda_setup.gui.run_gui()
+        ioda_setup.sub_unit['tofpcb'].guis["default"].run_gui()
+        ioda_setup.sub_unit['toffpga'].guis["default"].run_gui()
+        ioda_setup.sub_unit['motorcontroller_unit'].guis["default"].run_gui()
+        ioda_setup.guis["default"].run_gui()
 
-        ioda_setup.sub_unit['toffpga'].gui.gui_view.run_gtk()
+        ioda_setup.sub_unit['toffpga'].guis["default"].gui_view.run_gtk()
 
 
 if __name__ == "__main__":

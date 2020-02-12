@@ -1,0 +1,146 @@
+#  Configuration and status register definitions for PCB
+memory-map:
+ bus: wb-32-be
+ name: TofPCB
+ description: "PCB for time-of-flight distance measurment"
+ children:
+  - reg:
+      name: id
+      address: 0x0
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: id
+            description: ""
+            range: "31-0"
+  - reg:
+      name: pwm_comp_level_1
+      address: 0x4
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: pwm_comp_level_1
+            description: ""
+            range: "31-0"
+  - reg:
+      name: pwm_comp_level_2
+      address: 0x8
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: pwm_comp_level_2
+            description: ""
+            range: "31-0"
+  - reg:
+      name: pwm_v_adj_apd
+      address: 0xc
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: pwm_v_adj_apd
+            description: ""
+            range: "31-0"
+  - reg:
+      name: v_5v_sense
+      address: 0x10
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: v_5v_sense
+            description: ""
+            range: "31-0"
+  - reg:
+      name: v_apd_sense
+      address: 0x14
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: v_apd_sense
+            description: ""
+            range: "31-0"
+  - reg:
+      name: v_apd_r_sense
+      address: 0x18
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: v_apd_r_sense
+            description: ""
+            range: "31-0"
+  - reg:
+      name: v_sipm_sense
+      address: 0x1c
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: v_sipm_sense
+            description: ""
+            range: "31-0"
+  - reg:
+      name: lockin_1_filt
+      address: 0x20
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: lockin_1_filt
+            description: ""
+            range: "31-0"
+  - reg:
+      name: lockin_2_filt
+      address: 0x24
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: lockin_2_filt
+            description: ""
+            range: "31-0"
+  - reg:
+      name: lockin_1_peak
+      address: 0x28
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: lockin_1_peak
+            description: ""
+            range: "31-0"
+  - reg:
+      name: temperature
+      address: 0x2c
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: temperature
+            description: ""
+            range: "31-0"
+  - reg:
+      name: start_pulses
+      address: 0x30
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: start_pulses
+            description: ""
+            range: "31-0"
+  - reg:
+      name: stop_pulses
+      address: 0x34
+      width: 32
+      access: rw
+      children:
+        - field:
+            name: stop_pulses
+            description: ""
+            range: "31-0"
