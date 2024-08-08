@@ -1,12 +1,10 @@
 import time
-from TofProcessing import HistogramProcessing
-from TofProcessing import TofProcessing
+from Library.TofProcessing import HistogramProcessing
+from Library.TofProcessing import TofProcessing
 import numpy as np
 
 from TestEnv.TestEnvStructure import BaseController
 from Gepin.Gepin import BaseGepinRegisters
-from TestEnv.TestEnvLog import DataLogger
-from csr.csr_tofperipheral_manual import csr_tofperipheral
 
 
 class TofControl(BaseController, BaseGepinRegisters):

@@ -1,6 +1,6 @@
 from gui.DistanceMeasureGuiView import DistanceMeasureGuiView
-from IodaControl import IodaControl
-from IodaControl import PointMeasured
+from Controllers.IodaControl import IodaControl
+from Controllers.IodaControl import PointMeasured
 
 
 class DistanceMeasureGuiCtrl:

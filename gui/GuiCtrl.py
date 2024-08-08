@@ -1,5 +1,5 @@
 from gui.GuiView import GuiView
-from TofControl import TofControl
+from Controllers.TofControl import TofControl
 
 
 class GuiCtrl:

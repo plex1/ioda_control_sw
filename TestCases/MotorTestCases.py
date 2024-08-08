@@ -1,7 +1,5 @@
 from TestEnv.TestEnvStructure import AbstractTestCase
-from MotorControl import MotorControl
 import numpy as np
-import matplotlib.pyplot as plt
 import time
 
 

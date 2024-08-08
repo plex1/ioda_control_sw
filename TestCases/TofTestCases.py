@@ -1,6 +1,5 @@
 from TestEnv.TestEnvStructure import AbstractTestCase
-from TofControl import TofControl
-from TofProcessing import TofProcessing
+from Library.TofProcessing import TofProcessing
 import numpy as np
 import matplotlib.pyplot as plt
 

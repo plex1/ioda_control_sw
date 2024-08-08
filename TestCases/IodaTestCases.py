@@ -1,13 +1,9 @@
 from TestEnv.TestEnvStructure import AbstractTestCase
-from MotorControl import MotorControl
-import numpy as np
-import matplotlib.pyplot as plt
 import time
-from TofProcessing import TofProcessing
 import numpy as np
 import matplotlib.pyplot as plt
-from IodaControl import PointMeasured
-from IodaControl import PointCloud
+from Controllers.IodaControl import PointMeasured
+from Controllers.IodaControl import PointCloud
 from TestEnv.TestEnvLog import DataLogger
 
 class TestCaseID(AbstractTestCase):

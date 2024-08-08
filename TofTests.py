@@ -15,19 +15,19 @@ from TestEnv.TestEnvStructure import TestEnvMainControl
 def list_test_cases():
     # list of test cases
     tc = TestCases()
-    tc.add_test_case('TofTestCases.TestCaseID', ['toffpga'], ['connection_test'])
-    tc.add_test_case('TofTestCases.TestCaseCalibrate', ['toffpga'])
-    tc.add_test_case('TofTestCases.TestCaseMeasure', ['toffpga'])
-    tc.add_test_case('TofTestCases.TestCaseGetAllHistograms', ['toffpga'])
-    tc.add_test_case('TofTestCases.TestCaseTofRegHistogram', ['toffpga'])
-    tc.add_test_case('MotorTestCases.MotTestCaseID', ['motorcontroller_unit'], ['connection_test'])
-    tc.add_test_case('MotorTestCases.MotTestCaseDrive', ['motorcontroller_unit'])
-    tc.add_test_case('IodaTestCases.TestCaseID', ['ioda'], ['connection_test'])
-    tc.add_test_case('IodaTestCases.TestCaseADC', ['ioda'])
-    tc.add_test_case('IodaTestCases.TestCaseVapdCalibration', ['ioda'])
-    tc.add_test_case('IodaTestCases.TestCaseAbsorptionCalibration', ['ioda'], ['testnow'])
-    tc.add_test_case('IodaTestCases.TestCaseLine', ['ioda'])
-    tc.add_test_case('IodaTestCases.TestCase3d', ['ioda'])
+    tc.add_test_case('TestCases.TofTestCases.TestCaseID', ['toffpga'], ['connection_test'])
+    tc.add_test_case('TestCases.TofTestCases.TestCaseCalibrate', ['toffpga'])
+    tc.add_test_case('TestCases.TofTestCases.TestCaseMeasure', ['toffpga'])
+    tc.add_test_case('TestCases.TofTestCases.TestCaseGetAllHistograms', ['toffpga'])
+    tc.add_test_case('TestCases.TofTestCases.TestCaseTofRegHistogram', ['toffpga'])
+    tc.add_test_case('TestCases.MotorTestCases.MotTestCaseID', ['motorcontroller_unit'], ['connection_test'])
+    tc.add_test_case('TestCases.MotorTestCases.MotTestCaseDrive', ['motorcontroller_unit'])
+    tc.add_test_case('TestCases.IodaTestCases.TestCaseID', ['ioda'], ['connection_test'])
+    tc.add_test_case('TestCases.IodaTestCases.TestCaseADC', ['ioda'])
+    tc.add_test_case('TestCases.IodaTestCases.TestCaseVapdCalibration', ['ioda'])
+    tc.add_test_case('TestCases.IodaTestCases.TestCaseAbsorptionCalibration', ['ioda'], ['testnow'])
+    tc.add_test_case('TestCases.IodaTestCases.TestCaseLine', ['ioda'])
+    tc.add_test_case('TestCases.IodaTestCases.TestCase3d', ['ioda'])
 
 
 
@@ -37,10 +37,10 @@ def list_test_cases():
 def list_controllers():
     # list of test cases
     con = Controllers()
-    con.add_controller('toffpga', 'TofControl.TofControl', {"gepin_offset": 0xF0030000})
-    con.add_controller('motorcontroller_unit', 'MotorControl.MotorControl')
-    con.add_controller('tofpcb', 'TofPCBControl.TofPcbControl')
-    con.add_controller('ioda', 'IodaControl.IodaControl')
+    con.add_controller('toffpga', 'Controllers.TofControl.TofControl', {"gepin_offset": 0xF0030000})
+    con.add_controller('motorcontroller_unit', 'Controllers.MotorControl.MotorControl')
+    con.add_controller('tofpcb', 'Controllers.TofPCBControl.TofPcbControl')
+    con.add_controller('ioda', 'Controllers.IodaControl.IodaControl')
     return con
 
 
