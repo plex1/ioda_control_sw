@@ -28,14 +28,11 @@ def list_test_cases():
     tc.add_test_case('TestCases.IodaTestCases.TestCaseAbsorptionCalibration', ['ioda'], ['testnow'])
     tc.add_test_case('TestCases.IodaTestCases.TestCaseLine', ['ioda'])
     tc.add_test_case('TestCases.IodaTestCases.TestCase3d', ['ioda'])
-
-
-
     return tc
 
 
 def list_controllers():
-    # list of test cases
+    # list of test controllers corresponding to each unit
     con = Controllers()
     con.add_controller('toffpga', 'Controllers.TofControl.TofControl', {"gepin_offset": 0xF0030000})
     con.add_controller('motorcontroller_unit', 'Controllers.MotorControl.MotorControl')
@@ -45,7 +42,7 @@ def list_controllers():
 
 
 def list_guis():
-    # list of test cases
+    # list of test gui, with controller and view for each unit
     guis = Guis()
     guis.add_gui('toffpga', 'default', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
     guis.add_gui('motorcontroller_unit','default', 'gui.GuiCtrl.GuiCtrl', 'gui.GuiView.GuiView')
@@ -56,6 +53,7 @@ def list_guis():
 
 
 def create_hierarchy():
+    # create a hierarchy of the units with 'ioda' being the main unit
     tch = UnitHierarchy()
     tch.add_unit('ioda', ['motorcontroller_unit', 'toffpga', 'tofpcb'])
     tch.add_unit('motorcontroller_unit', ['motorcontrollerpower_unit'])
@@ -64,9 +62,11 @@ def create_hierarchy():
 
 def create_testif():
 
+    # creates interfaces
+
     gepin_tcp = GepinPhyTcp("192.168.1.105", 9801)
 
-    # init interface (Gepin: General Purpose Interface)
+    # in case of using uart instead of tcp, another physical layer needs to be instantiated
     #serial_port = '/dev/ttyS0'
     #serial_port = '/dev/ttyUSB0'
     #gepin_phy_serial = GepinPhySerial(serial_port, baudrate=9600)
@@ -88,7 +88,6 @@ def create_testif():
 
 # End Define the project setup ---------------------------------------------------------
 
-
 def main():
 
     # create test TestEnv framework
@@ -101,15 +100,16 @@ def main():
     guis = list_guis()
 
     # test id
-    new = False  # to be adopted by user
+    new = False  # False: process existing data (don't run execute, only evaluate)
+    # select id of run
     if new:
         id = AbstractTestCase.gen_id()
     else:
-        id = '20200125-042610' #3d map
-        id = '20200126-053540'
+        # select existing id
+        #id = '20200125-042610' # 3d map
+        id = '20200126-053540' # calibration
 
-
-    # create Test Env Main Controller and set id
+    # create Test Environment and set id
     main_controller = TestEnvMainControl(testif, hierarchy, controllers, testcases, requirements, guis)
     main_controller.set_id(id)
 
@@ -121,19 +121,17 @@ def main():
 
         testenv_filter = TestEnvFilter()
 
-        # filters: to be adapted by user
+        # filters: to be adapted by user,
+        # with these only a subset of the testcases can be selected
         #filter for units
         testenv_filter.unit_filter_type = 'keep'
-        testenv_filter.units = ['ioda'] #toffpga
+        testenv_filter.units = ['ioda']
 
         #filter for test case tags
-        #testenv_filter.units = ['toffpga']
-        #testenv_filter.tc_filter_type = 'keep'
-        #testenv_filter.tc_tags = ['connection_test']
         testenv_filter.tc_filter_type = 'keep'
         testenv_filter.tc_tags = ['testnow']
 
-
+        # run test cases for 'ioda' including all subunits
         if new:
             main_controller.run("ioda", True, testenv_filter)
         main_controller.analyze("ioda", True, testenv_filter)
@@ -141,6 +139,7 @@ def main():
 
     if mode == 'gui':
 
+        # run guis for units
         ioda_setup = main_controller.control()
         ioda_setup.sub_unit['tofpcb'].guis["default"].run_gui()
         ioda_setup.sub_unit['toffpga'].guis["default"].run_gui()

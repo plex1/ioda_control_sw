@@ -222,6 +222,7 @@ class GuiView(Gtk.Window):
     def run_gtk(self):
         Gtk.main()
 
+# example usage
 def main():
     class Register:
 
@@ -232,12 +233,11 @@ def main():
             self.description = description
             self.field = {}
 
-    # list of test cases
-    # list of tuples
+
     reg1 = Register(None, 0x1)
     reg2 = Register(None, 0x2)
     parameter_list = {}
-    parameter_list["Register 1"]= reg1
+    parameter_list["Register 1"] = reg1
     parameter_list["Register 2"] = reg2
 
     gv = GuiView()
