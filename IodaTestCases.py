@@ -48,7 +48,7 @@ class TestCaseADC(AbstractTestCase):
         tofc = self.setup.sub_unit['toffpga'].ctrl
         tofc.init()
         tofc.cal_time = 1
-        registers_tofpcb.reg['pwm_comp_level1'].write(140)
+        registers_tofpcb.reg['pwm_comp_level_1'].write(140)
         registers_tofpcb.reg['pwm_v_adj_apd'].write(100)
         tofc.calibrate()
         print("calibrated")
@@ -59,7 +59,7 @@ class TestCaseADC(AbstractTestCase):
         delay_measured=[]
         threshold_set = range(128, 166)
         for threshold in threshold_set:
-            registers_tofpcb.reg['pwm_comp_level1'].write(threshold)
+            registers_tofpcb.reg['pwm_comp_level_1'].write(threshold)
             time.sleep(0.1)
             slot_select = registers_toffpga.reg['averageFilter'].read() + 0  # todo: tbd +1?
             print('Slot select' + str(slot_select))
@@ -71,7 +71,7 @@ class TestCaseADC(AbstractTestCase):
         registers_toffpga.reg['control'].field['edge'].set()
         delay_measured2 = []
         for threshold in threshold_set:
-            registers_tofpcb.reg['pwm_comp_level1'].write(threshold)
+            registers_tofpcb.reg['pwm_comp_level_1'].write(threshold)
             time.sleep(0.1)
             slot_select = registers_toffpga.reg['averageFilter'].read() + 0  # todo: tbd +1?
             print('Slot select' + str(slot_select))
@@ -131,7 +131,7 @@ class TestCaseVapdCalibration(AbstractTestCase):
         tofc = self.setup.sub_unit['toffpga'].ctrl
         tofc.init()
         tofc.cal_time = 1
-        registers_tofpcb.reg['pwm_comp_level1'].write(140)
+        registers_tofpcb.reg['pwm_comp_level_1'].write(140)
         registers_tofpcb.reg['pwm_v_adj_apd'].write(100)
         tofc.calibrate()
         print("calibrated")
@@ -155,7 +155,7 @@ class TestCaseVapdCalibration(AbstractTestCase):
             threshold_set = range(129, 136, 3)
             for threshold in threshold_set:
                 #set delay
-                registers_tofpcb.reg['pwm_comp_level1'].write(threshold)
+                registers_tofpcb.reg['pwm_comp_level_1'].write(threshold)
                 time.sleep(0.1)
 
                 # time measurement
@@ -276,7 +276,7 @@ class TestCaseLine(AbstractTestCase):
         tofc = self.setup.sub_unit['toffpga'].ctrl
         tofc.init()
         tofc.cal_time = 1
-        registers_tofpcb.reg['pwm_comp_level1'].write(133)
+        registers_tofpcb.reg['pwm_comp_level_1'].write(133)
         registers_tofpcb.reg['pwm_v_adj_apd'].write(120)
         tofc.calibrate()
         print("calibrated")
@@ -416,15 +416,15 @@ class TestCaseAbsorptionCalibration(AbstractTestCase):
 
         registers_toffpga.reg['control'].field['edge'].clear()
         registers_toffpga.reg['control'].field['trigOn'].set()
-        registers_toffpga.reg['control'].field['SyncOn'].clear()
+        registers_toffpga.reg['control'].field['syncOn'].clear()
 
 
         # init tofcontrol
         tofc = self.setup.sub_unit['toffpga'].ctrl
         tofc.init()
         tofc.cal_time = 1
-        registers_tofpcb.reg['pwm_comp_level1'].write(140)
-        vapd=120
+        registers_tofpcb.reg['pwm_comp_level_1'].write(140)
+        vapd=110
         registers_tofpcb.reg['pwm_v_adj_apd'].write(vapd)
         tofc.calibrate()
         print("calibrated")
@@ -445,7 +445,7 @@ class TestCaseAbsorptionCalibration(AbstractTestCase):
         absorption_index=range(0,7)
         point_list=[]
 
-        vapd_list = range(70,131,10)#[80, 100, 120]
+        vapd_list = [110] #range(70,131,10)#[80, 100, 120]
         for vapd in vapd_list:
 
             registers_tofpcb.reg['pwm_v_adj_apd'].write(vapd)
@@ -463,6 +463,12 @@ class TestCaseAbsorptionCalibration(AbstractTestCase):
                 point["elevation"] = elevation
                 point["vapd"]=vapd
                 point_list.append(point)
+                p1 = PointMeasured(point["delays"], azimuth, elevation, point["vapd"], point["snrs"])
+                print("delay: " + str(p1.get_time()))
+                print("derivation_inv: "+str(p1.get_derivation_inv()))
+                print("snr0: " + str(p1.get_snr0()))
+                print("count: " + str(p1.get_count()))
+                print("-------")
 
 
 
@@ -618,7 +624,7 @@ class TestCase3d(AbstractTestCase):
         tofc.cal_time = 1
         tofc.measure_time=0.2
         registers_toffpga.reg['trigTestPeriod'].write(4)
-        registers_tofpcb.reg['pwm_comp_level1'].write(133)
+        registers_tofpcb.reg['pwm_comp_level_1'].write(133)
         vapd=120
         registers_tofpcb.reg['pwm_v_adj_apd'].write(vapd)
         tofc.calibrate()
@@ -694,7 +700,7 @@ class TestCase3d(AbstractTestCase):
 
         filtered_cloud = PointCloud(point_cloud.get_points_azimuth(0.02))
         v= pptk.viewer(point_cloud.get_cartesian_list())
-        v.set(point_size=0.0025)
+        v.set(point_size=0.0025, lookat=(0,0,0))
 
 
 

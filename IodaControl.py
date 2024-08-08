@@ -38,12 +38,13 @@ class IodaControl(BaseController, BaseGepinRegisters):
 
         delays_measured = []
         snrs_measured = []
-
-        threshold_set = range(129, 133, 3)
+        diff = 5
+        init=130
+        threshold_set = range(init, init+diff+1, diff)
         for threshold in threshold_set:
             # set delay
-            registers_tofpcb.reg['pwm_comp_level1'].write(threshold)
-            time.sleep(0.1)
+            registers_tofpcb.reg['pwm_comp_level_1'].write(threshold)
+            time.sleep(0.5)
 
             # time measurement
             [delay_meas1, snr1] = self.sub_units['toffpga'].ctrl.measure_delay_snr()

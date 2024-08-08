@@ -12,8 +12,8 @@ class csr_tofpcb():
     def get_reg_list(self):
         registers = []
         registers.append(self.register(0x0, "id"))
-        registers.append(self.register(0x1, "pwm_comp_level1"))
-        registers.append(self.register(0x2, "pwm_comp_level2"))
+        registers.append(self.register(0x1, "pwm_comp_level_1"))
+        registers.append(self.register(0x2, "pwm_comp_level_2"))
         registers.append(self.register(0x3, "pwm_v_adj_apd"))
         registers.append(self.register(0x4, "v_5v_sense"))
         registers.append(self.register(0x5, "v_apd_sense"))
