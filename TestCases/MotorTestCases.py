@@ -102,3 +102,96 @@ class MotTestCaseDrive(AbstractTestCase):
 
         self.checker.write_to_file('data/' + self.prefix + '_logger.dat')
 
+
+class MotTestCaseDriveShowCase(AbstractTestCase):
+
+    def __init__(self,id, unit_name='', testif={}, controller=None, setup=None):
+        self.testif = testif
+        TestCaseName = 'MotTestCaseDriveShowCase'
+        super().__init__(TestCaseName, id, unit_name, controller)
+
+    def execute(self):
+        AbstractTestCase.execute(self)
+
+        registers = self.controller.registers
+
+        # set zero
+        self.controller.set_zero_pos()
+
+        self.controller.set_step_resolution_1o2()
+        self.controller.enable_motors()
+        time.sleep(0.1)
+        #registers.reg['target_speed'].write(1200)
+        self.controller.set_speed(42*20)
+
+        def ae_deg(ae):
+            return [np.rad2deg(ae[0]*2*np.pi), np.rad2deg(ae[1]*2*np.pi)]
+
+
+        def run_mot_test(step_size, axis=0):
+            target_pos = [step_size*(1-axis), step_size*axis]
+            self.controller.goto_pos(target_pos)
+            print("going to position, ", ae_deg(target_pos), " deg (azimut-elevation )")
+            while self.controller.is_running():
+                pass
+            target_pos = [0.0, 0.0]
+            self.controller.goto_pos(target_pos)
+            print("going to position, ", ae_deg(target_pos), " deg (azimut-elevation )")
+            while self.controller.is_running():
+                pass
+
+        def run_mot_test_microsteps(step_size, axis):
+            target_pos = [step_size*(1-axis), step_size*axis]
+            self.controller.goto_motor_pos(target_pos)
+            print("going to position, ", target_pos, " microsteps")
+            while self.controller.is_running():
+                pass
+            target_pos = [0.0, 0.0]
+            self.controller.goto_pos(target_pos)
+            print("going to position, ", ae_deg(target_pos), " microsteps")
+            while self.controller.is_running():
+                pass
+
+        def run_step_test(step_size, number_of_steps, axis):
+            for i, pos in enumerate(list(np.linspace(0, number_of_steps * step_size, number_of_steps, endpoint=True))):
+                target_pos = [pos*(1-axis), pos*axis]
+                self.controller.goto_pos(target_pos)
+                print("going to position, ", ae_deg(target_pos), " deg (azimut-elevation)")
+                while self.controller.is_running():
+                    pass
+
+            target_pos = [0.0, 0.0]
+            self.controller.goto_pos(target_pos)
+            print("going to position, ", ae_deg(target_pos), " deg (azimut-elevation )")
+            while self.controller.is_running():
+                pass
+
+        print("Micro Step Tests, half step resolution----")
+        run_mot_test_microsteps(200, axis=0)
+        run_mot_test_microsteps(200, axis=1)
+
+        print("Run Coordinate Tests, half step resolution---- ----")
+        run_mot_test(np.deg2rad(180) / (np.pi * 2), axis=1)
+        run_mot_test(np.deg2rad(180) / (np.pi*2), axis=0)
+
+        print("Run Coordinate Stepping Tests, half step resolution---- ----")
+        # stepping
+        step_size = np.deg2rad(30)/(2*np.pi)
+        number_of_steps = 3
+
+        run_step_test(step_size, number_of_steps, axis=1)
+        run_step_test(step_size, number_of_steps, axis=0)
+
+        print("Run Coordinate Stepping Tests, 1/16 microstep resolution ----")
+        self.controller.set_step_resolution_1o16()
+        step_size = np.deg2rad(30) / (2 * np.pi)
+        run_step_test(step_size, number_of_steps, axis=1)
+        run_step_test(step_size, number_of_steps, axis=0)
+
+        self.controller.disable_motors()
+
+
+    def evaluate(self):
+        AbstractTestCase.evaluate(self)
+
+        self.checker.write_to_file('data/' + self.prefix + '_logger.dat')

@@ -158,8 +158,11 @@ class Unit(object):
         # add guis
         unit_gui_names = guis.get_gui_names_of_unit(self.name)
         for gui_name in unit_gui_names:
-            gui = guis.get_gui_instance(self.name, gui_name, ctrl)
-            self.add_gui(gui_name, gui)
+            try:
+                gui = guis.get_gui_instance(self.name, gui_name, ctrl)
+                self.add_gui(gui_name, gui)
+            except:
+                print("Warning: GUI for " + self.name + " could not be loaded")
 
 
 class UnitHierarchy(object):

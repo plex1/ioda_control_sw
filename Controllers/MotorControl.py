@@ -20,7 +20,10 @@ class MotorControl(BaseController, BaseGepinRegisters):
         self.n_lower = 42  # number of teeth in lower gear
         self.n_outer = 64  # number of teeth in outer gear
         self.n_spr = 200  # motor steps per revolution
-        self.n_ms = 16  # micro stepping
+        self.calc_variables(16)
+
+    def calc_variables(self, n_ms=16):
+        self.n_ms = n_ms  # micro stepping
         self.k1 = self.n_pinion / self.n_lower * 1 / self.n_spr * 1 / self.n_ms
         self.k2 = self.n_pinion / self.n_upper * 1 / self.n_spr * 1 / self.n_ms
         self.k12 = self.k1 * self.n_outer / self.n_upper
@@ -36,7 +39,7 @@ class MotorControl(BaseController, BaseGepinRegisters):
         else:
             return False
 
-    # ae = azimuth / elevation = theta / inclination
+    # ae = azimuth / elevation = theta / inclination, values for 0..1
     def ae_to_mot(self, ae_coord):
         s1 =  ae_coord[0]/self.k1
         s2 =  ae_coord[1]/self.k2 + ae_coord[0]/self.k12_inv
@@ -84,16 +87,24 @@ class MotorControl(BaseController, BaseGepinRegisters):
         m0 = 0
         m1 = 1
         self.set_step_resolution(m0, m1)
+        self.calc_variables(8)
 
     def set_step_resolution_1o16(self):
         m0 = 1
         m1 = 1
         self.set_step_resolution(m0, m1)
+        self.calc_variables(16)
 
     def set_step_resolution_1o2(self):
         m0 = 1
         m1 = 0
         self.set_step_resolution(m0, m1)
+        self.calc_variables(2)
+
+    def set_speed(self, speed): # depends on step resolution
+        if speed>1024:
+            Exception("Speed needs to be <1024")
+        self.registers.reg['target_speed'].write(speed)
 
     def is_running(self):
         return ((self.registers.reg['motor1_status'].read() & 1) != 0) or \
