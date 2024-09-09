@@ -15,6 +15,13 @@ The framework has the following functionality:
 
 To control the FPGA a memory map protocol is used which we call Gepin (General Purpose Interface). Gepin allows to write and read from addresses. The length of the data to be read/written is variable. For request with length longer than one a flag can be used to set the increase or fixed address mode.  Fixed address mode can for example be used to write to FIFOs.
 
+# Installation
+
+```
+pip install pyserial tinydb==3.13.0
+
+```
+
 # Tests and GUI
 
 The test as well as the GUI can be run from `TofTests.py`.
